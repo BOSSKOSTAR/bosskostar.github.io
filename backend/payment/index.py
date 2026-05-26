@@ -11,7 +11,7 @@ def get_user(cur, session_id):
     return cur.fetchone()
 
 def handler(event: dict, context) -> dict:
-    """Пополнение баланса через ЮМани и история транзакций"""
+    """Пополнение баланса через ЮМани и история транзакций. v2"""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}
@@ -83,7 +83,7 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Минимальная сумма 100 руб'})}
 
         wallet = os.environ.get('YOOMONEY_WALLET', '')
-        payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver={wallet}&quickpay-form=shop&targets=Пополнение+баланса&paymentType=AC&sum={amount}&label={user_id}"
+        payment_url = f"https://yoomoney.ru/transfer/quickpay?receiver={wallet}&quickpay-form=shop&targets=Пополнение+баланса&paymentType=AC&sum={amount}&label={user_id}"
 
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'payment_url': payment_url, 'amount': amount})}
