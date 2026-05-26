@@ -24,19 +24,19 @@ async function request(url: string, method = 'GET', body?: object) {
 }
 
 export const api = {
-  register: (data: object) => request(`${URLS.auth}/register`, 'POST', data),
-  login: (data: object) => request(`${URLS.auth}/login`, 'POST', data),
-  me: () => request(`${URLS.auth}/me`),
-  logout: () => request(`${URLS.auth}/logout`, 'POST'),
+  register: (data: object) => request(URLS.auth, 'POST', { action: 'register', ...data }),
+  login: (data: object) => request(URLS.auth, 'POST', { action: 'login', ...data }),
+  me: () => request(URLS.auth, 'POST', { action: 'me' }),
+  logout: () => request(URLS.auth, 'POST', { action: 'logout' }),
 
-  getTeasers: () => request(`${URLS.teasers}/teasers`),
-  createTeaser: (data: object) => request(`${URLS.teasers}/teasers`, 'POST', data),
-  updateTeaserStatus: (id: number, status: string) => request(`${URLS.teasers}/teasers/${id}`, 'PUT', { status }),
+  getTeasers: () => request(URLS.teasers, 'POST', { action: 'list' }),
+  createTeaser: (data: object) => request(URLS.teasers, 'POST', { action: 'create', ...data }),
+  updateTeaserStatus: (id: number, status: string) => request(URLS.teasers, 'POST', { action: 'update', id, status }),
 
-  getSites: () => request(URLS.sites),
-  createSite: (data: object) => request(URLS.sites, 'POST', data),
+  getSites: () => request(URLS.sites, 'POST', { action: 'list' }),
+  createSite: (data: object) => request(URLS.sites, 'POST', { action: 'create', ...data }),
 
-  getStats: () => request(URLS.stats),
-  getTransactions: () => request(URLS.payment),
-  createPayment: (amount: number) => request(`${URLS.payment}/create`, 'POST', { amount }),
+  getStats: () => request(URLS.stats, 'POST', { action: 'get' }),
+  getTransactions: () => request(URLS.payment, 'POST', { action: 'list' }),
+  createPayment: (amount: number) => request(URLS.payment, 'POST', { action: 'create', amount }),
 };
