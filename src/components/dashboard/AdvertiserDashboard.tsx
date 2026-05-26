@@ -26,7 +26,7 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [payAmount, setPayAmount] = useState('500');
-  const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '10' });
+  const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
 
@@ -49,7 +49,7 @@ export default function AdvertiserDashboard({ user }: Props) {
     setLoading(false);
     if (!res.error) {
       setShowCreateForm(false);
-      setForm({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '10' });
+      setForm({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
       loadData();
     } else {
       alert(res.error);
@@ -149,7 +149,7 @@ export default function AdvertiserDashboard({ user }: Props) {
               </div>
               <div>
                 <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>CPM (руб за 1000 показов)</label>
-                <Input value={form.cpm} onChange={e => setForm({...form, cpm: e.target.value})} type="number" min="10" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                <Input value={form.cpm} onChange={e => setForm({...form, cpm: e.target.value})} type="number" min="50" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
               </div>
             </div>
             <div className="flex gap-3">

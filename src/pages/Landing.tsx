@@ -23,7 +23,7 @@ export default function Landing() {
           Тизерная реклама<br/><span style={{color: 'var(--gold)'}}>прямо в браузере</span>
         </h1>
         <p className="text-xl mb-10 max-w-2xl mx-auto" style={{color: 'var(--text-muted)'}}>
-          Рекламируйте свои товары через push-уведомления. Платите только за реальные показы. От 10 руб за 1000 показов.
+          Рекламируйте свои товары через push-уведомления. Платите только за реальные показы. От 50 руб за 1000 показов.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
           <Button size="lg" onClick={() => navigate('/register?role=advertiser')} style={{backgroundColor: 'var(--gold)', color: '#111318', fontSize: '1rem', padding: '0 2rem', height: '3rem'}}>
@@ -82,7 +82,7 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)'}}>
               <h3 className="text-xl font-bold mb-2">Рекламодатель</h3>
-              <div className="text-4xl font-bold font-display my-4" style={{color: 'var(--gold)'}}>от 10 ₽</div>
+              <div className="text-4xl font-bold font-display my-4" style={{color: 'var(--gold)'}}>от 50 ₽</div>
               <p style={{color: 'var(--text-muted)'}}>за 1000 показов (CPM)</p>
               <ul className="mt-6 space-y-2 text-left" style={{color: 'var(--text-muted)'}}>
                 <li>✓ Любой бюджет от 100 руб</li>
