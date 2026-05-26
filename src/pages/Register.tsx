@@ -35,14 +35,6 @@ export default function Register() {
         <h1 className="text-2xl font-bold font-display mb-6 text-center" style={{color: 'var(--gold)'}}>TizerPro</h1>
         <h2 className="text-xl font-bold mb-6 text-center" style={{color: 'var(--text-primary)'}}>Регистрация</h2>
 
-        <div className="flex gap-2 mb-6">
-          {['advertiser', 'webmaster'].map(r => (
-            <button key={r} onClick={() => setRole(r)} className="flex-1 py-2 rounded text-sm font-medium transition-colors"
-              style={{backgroundColor: role === r ? 'var(--gold)' : 'var(--charcoal)', color: role === r ? '#111318' : 'var(--text-muted)', border: '1px solid var(--line)'}}>
-              {r === 'advertiser' ? 'Рекламодатель' : 'Вебмастер'}
-            </button>
-          ))}
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
