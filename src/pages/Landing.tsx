@@ -29,9 +29,6 @@ export default function Landing() {
           <Button size="lg" onClick={() => navigate('/register?role=advertiser')} style={{backgroundColor: 'var(--gold)', color: '#111318', fontSize: '1rem', padding: '0 2rem', height: '3rem'}}>
             Разместить рекламу
           </Button>
-          <Button size="lg" variant="outline" onClick={() => navigate('/register?role=webmaster')} style={{borderColor: 'var(--gold)', color: 'var(--gold)', fontSize: '1rem', padding: '0 2rem', height: '3rem'}}>
-            Стать вебмастером
-          </Button>
         </div>
       </section>
 
@@ -55,32 +52,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How it works - webmasters */}
-      <section className="py-16 px-6">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold font-display text-center mb-12">Для вебмастеров</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {icon: 'Globe', num: '01', title: 'Добавьте сайт', desc: 'Зарегистрируйте свой сайт и получите уникальный токен'},
-              {icon: 'Code', num: '02', title: 'Установите скрипт', desc: 'Вставьте 2 строки кода на свой сайт — всё настроится автоматически'},
-              {icon: 'DollarSign', num: '03', title: 'Зарабатывайте', desc: 'Получайте деньги за каждого подписчика и показ рекламы'},
-            ].map(item => (
-              <div key={item.num} className="p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-                <div className="text-4xl font-bold font-display mb-4" style={{color: 'var(--gold)'}}>{item.num}</div>
-                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                <p style={{color: 'var(--text-muted)'}}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section className="py-16 px-6" style={{backgroundColor: 'var(--charcoal-mid)'}}>
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold font-display mb-8">Простые тарифы</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)'}}>
+          <div className="flex justify-center">
+            <div className="p-8 rounded-lg max-w-sm w-full" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)'}}>
               <h3 className="text-xl font-bold mb-2">Рекламодатель</h3>
               <div className="text-4xl font-bold font-display my-4" style={{color: 'var(--gold)'}}>от 50 ₽</div>
               <p style={{color: 'var(--text-muted)'}}>за 1000 показов (CPM)</p>
@@ -88,16 +65,6 @@ export default function Landing() {
                 <li>✓ Любой бюджет от 100 руб</li>
                 <li>✓ Показы в реальном браузере</li>
                 <li>✓ Статистика в реальном времени</li>
-              </ul>
-            </div>
-            <div className="p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)'}}>
-              <h3 className="text-xl font-bold mb-2">Вебмастер</h3>
-              <div className="text-4xl font-bold font-display my-4" style={{color: 'var(--gold)'}}>Бесплатно</div>
-              <p style={{color: 'var(--text-muted)'}}>регистрация и установка</p>
-              <ul className="mt-6 space-y-2 text-left" style={{color: 'var(--text-muted)'}}>
-                <li>✓ Заработок на своей аудитории</li>
-                <li>✓ Простая установка скрипта</li>
-                <li>✓ Вывод заработанных средств</li>
               </ul>
             </div>
           </div>
