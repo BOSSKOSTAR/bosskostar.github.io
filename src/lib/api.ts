@@ -36,6 +36,7 @@ export const api = {
   getSites: () => request(URLS.sites, 'POST', { action: 'list' }),
   createSite: (data: object) => request(URLS.sites, 'POST', { action: 'create', ...data }),
 
+  sendPush: (teaser_id: number) => request(URLS.pushSend, 'POST', { action: 'send', teaser_id }),
   getStats: () => request(URLS.stats, 'POST', { action: 'get' }),
   getTransactions: () => request(URLS.payment, 'POST', { action: 'list' }),
   createPayment: (amount: number) => request(URLS.payment, 'POST', { action: 'create', amount }),

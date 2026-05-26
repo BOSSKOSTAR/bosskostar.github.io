@@ -6,6 +6,8 @@ import Icon from '@/components/ui/icon';
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Record<string, number> | null>(null);
   const [teasers, setTeasers] = useState<Record<string, unknown>[]>([]);
+  const [sending, setSending] = useState<number | null>(null);
+  const [sendResult, setSendResult] = useState<Record<number, string>>({});
 
   useEffect(() => { loadData(); }, []);
 
@@ -17,6 +19,17 @@ export default function AdminDashboard() {
 
   const updateStatus = async (id: number, status: string) => {
     await api.updateTeaserStatus(id, status);
+    loadData();
+  };
+
+  const approveAndSend = async (id: number) => {
+    await api.updateTeaserStatus(id, 'active');
+    setSending(id);
+    const res = await api.sendPush(id);
+    setSending(null);
+    if (res.sent !== undefined) {
+      setSendResult(prev => ({...prev, [id]: `Отправлено: ${res.sent}, ошибок: ${res.failed}`}));
+    }
     loadData();
   };
 
@@ -48,20 +61,32 @@ export default function AdminDashboard() {
       <h3 className="text-xl font-bold font-display mb-4">Тизеры на модерации</h3>
       <div className="space-y-3">
         {teasers.filter(t => t.status === 'pending').map(t => (
-          <div key={t.id as number} className="p-4 rounded-lg flex gap-4 items-start justify-between" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-            <div>
-              <div className="font-bold mb-1">{t.title as string}</div>
-              <div className="text-sm" style={{color: 'var(--text-muted)'}}>{t.url as string}</div>
-              {t.owner && <div className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Владелец: {t.owner as string}</div>}
+          <div key={t.id as number} className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+            <div className="flex gap-4 items-start justify-between mb-2">
+              <div>
+                <div className="font-bold mb-1">{t.title as string}</div>
+                <div className="text-sm" style={{color: 'var(--text-muted)'}}>{t.url as string}</div>
+                {t.owner && <div className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Владелец: {t.owner as string}</div>}
+                <div className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Бюджет: <b style={{color: 'var(--gold)'}}>{(t.budget as number)?.toFixed(2)} ₽</b></div>
+              </div>
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Button size="sm" onClick={() => approveAndSend(t.id as number)} disabled={sending === t.id as number} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+                  <Icon name="Send" size={14} className="mr-1" />
+                  {sending === t.id as number ? 'Рассылаем...' : 'Одобрить и разослать'}
+                </Button>
+                <Button size="sm" onClick={() => updateStatus(t.id as number, 'active')} style={{backgroundColor: '#10b981', color: 'white'}}>
+                  <Icon name="Check" size={14} className="mr-1" /> Одобрить
+                </Button>
+                <Button size="sm" onClick={() => updateStatus(t.id as number, 'rejected')} style={{backgroundColor: '#ef4444', color: 'white'}}>
+                  <Icon name="X" size={14} className="mr-1" /> Отклонить
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={() => updateStatus(t.id as number, 'active')} style={{backgroundColor: '#10b981', color: 'white'}}>
-                <Icon name="Check" size={14} className="mr-1" /> Одобрить
-              </Button>
-              <Button size="sm" onClick={() => updateStatus(t.id as number, 'rejected')} style={{backgroundColor: '#ef4444', color: 'white'}}>
-                <Icon name="X" size={14} className="mr-1" /> Отклонить
-              </Button>
-            </div>
+            {sendResult[t.id as number] && (
+              <div className="text-xs px-3 py-1.5 rounded mt-2" style={{backgroundColor: '#10b98122', color: '#10b981'}}>
+                <Icon name="BellRing" size={12} className="inline mr-1" />{sendResult[t.id as number]}
+              </div>
+            )}
           </div>
         ))}
         {teasers.filter(t => t.status === 'pending').length === 0 && (
@@ -84,11 +109,17 @@ export default function AdminDashboard() {
                 color: t.status === 'active' ? '#10b981' : t.status === 'pending' ? '#f59e0b' : '#6b7280'
               }}>{t.status as string}</span>
               {t.status === 'active' && (
-                <Button size="sm" variant="ghost" onClick={() => updateStatus(t.id as number, 'paused')} style={{color: 'var(--text-muted)', fontSize: '0.7rem'}}>Пауза</Button>
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => api.sendPush(t.id as number).then(r => r.sent !== undefined && setSendResult(prev => ({...prev, [t.id as number]: `Разослано: ${r.sent}`})))} style={{color: 'var(--gold)', fontSize: '0.7rem'}}>
+                    <Icon name="Send" size={12} className="mr-1" />Разослать
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => updateStatus(t.id as number, 'paused')} style={{color: 'var(--text-muted)', fontSize: '0.7rem'}}>Пауза</Button>
+                </>
               )}
               {t.status === 'paused' && (
                 <Button size="sm" variant="ghost" onClick={() => updateStatus(t.id as number, 'active')} style={{color: 'var(--gold)', fontSize: '0.7rem'}}>Активировать</Button>
               )}
+              {sendResult[t.id as number] && <span className="text-xs" style={{color: '#10b981'}}>{sendResult[t.id as number]}</span>}
             </div>
           </div>
         ))}

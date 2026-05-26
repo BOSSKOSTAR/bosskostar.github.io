@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 
+const PUSH_URL = 'https://functions.poehali.dev/173ba231-42e9-401a-abd7-08cce3063f9d';
+const SITES_URL = 'https://functions.poehali.dev/41ca0f1c-9ba7-4dde-8961-779ab034a1fc';
+
 interface Site {
   id: number;
   name: string;
@@ -22,7 +25,7 @@ export default function WebmasterDashboard({ user: _user }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', url: '' });
   const [loading, setLoading] = useState(false);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -41,30 +44,45 @@ export default function WebmasterDashboard({ user: _user }: Props) {
     else alert(res.error);
   };
 
-  const copyToken = (token: string) => {
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
-  };
-
-  const getScript = (token: string) => `<script>
+  const getScript = (token: string) =>
+`<script>
 (function(){
-  if('serviceWorker' in navigator && 'PushManager' in window){
+  var PUSH_URL = '${PUSH_URL}';
+  var SITES_URL = '${SITES_URL}';
+  var TOKEN = '${token}';
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+  fetch(PUSH_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action:'vapid_key'})
+  }).then(r=>r.json()).then(function(d){
+    var vapidKey = d.public_key;
+    if (!vapidKey) return;
+
     navigator.serviceWorker.register('/sw.js').then(function(reg){
-      Notification.requestPermission().then(function(perm){
-        if(perm==='granted'){
-          reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:null}).then(function(sub){
-            fetch('https://functions.poehali.dev/41ca0f1c-9ba7-4dde-8961-779ab034a1fc/subscribe',{
-              method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({token:'${token}',endpoint:sub.endpoint,p256dh:'key',auth:'auth',browser:navigator.userAgent.split(' ').pop()})
-            });
-          });
-        }
+      return Notification.requestPermission().then(function(perm){
+        if (perm !== 'granted') return;
+        var key = Uint8Array.from(atob(vapidKey.replace(/-/g,'+').replace(/_/g,'/')), function(c){return c.charCodeAt(0);});
+        return reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:key});
+      });
+    }).then(function(sub){
+      if (!sub) return;
+      var j = sub.toJSON();
+      fetch(SITES_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'subscribe', token:TOKEN,
+          endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth,
+          browser:navigator.userAgent.substring(0,50)})
       });
     });
-  }
+  });
 })();
 </script>`;
+
+  const copyScript = (id: number, token: string) => {
+    navigator.clipboard.writeText(getScript(token));
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   return (
     <div>
@@ -124,7 +142,7 @@ export default function WebmasterDashboard({ user: _user }: Props) {
         <div className="space-y-4">
           {sites.map(site => (
             <div key={site.id} className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <div>
                   <span className="font-bold">{site.name}</span>
                   <span className="text-sm ml-2" style={{color: 'var(--text-muted)'}}>{site.url}</span>
@@ -134,14 +152,26 @@ export default function WebmasterDashboard({ user: _user }: Props) {
                   <span>Заработано: <b style={{color: 'var(--gold)'}}>{site.earnings.toFixed(2)} ₽</b></span>
                 </div>
               </div>
-              <div className="mt-3">
-                <p className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Код для установки на сайт:</p>
-                <div className="relative">
-                  <pre className="text-xs p-3 rounded overflow-x-auto" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-muted)', maxHeight: '120px'}}>{getScript(site.token)}</pre>
-                  <Button size="sm" onClick={() => copyToken(getScript(site.token))} className="absolute top-2 right-2" style={{backgroundColor: 'var(--charcoal-mid)', color: 'var(--text-muted)', border: '1px solid var(--line)', padding: '0.25rem 0.5rem', fontSize: '0.7rem'}}>
-                    {copiedToken === getScript(site.token) ? 'Скопировано!' : 'Копировать'}
-                  </Button>
+
+              <div className="p-3 rounded-lg mb-3" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)'}}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon name="Info" size={14} style={{color: 'var(--gold)'}} />
+                  <span className="text-xs font-semibold" style={{color: 'var(--gold)'}}>Как подключить push-уведомления</span>
                 </div>
+                <ol className="text-xs space-y-1" style={{color: 'var(--text-muted)'}}>
+                  <li>1. Скопируй код ниже</li>
+                  <li>2. Вставь его перед закрывающим тегом <code style={{color: 'var(--text-primary)'}}>&lt;/body&gt;</code> на своём сайте</li>
+                  <li>3. Файл <code style={{color: 'var(--text-primary)'}}>sw.js</code> должен лежать в корне сайта — <a href="/sw.js" target="_blank" style={{color: 'var(--gold)', textDecoration: 'underline'}}>скачать sw.js</a></li>
+                  <li>4. Посетители сайта увидят запрос на разрешение уведомлений</li>
+                </ol>
+              </div>
+
+              <div className="relative">
+                <p className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Код для установки:</p>
+                <pre className="text-xs p-3 rounded overflow-x-auto" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-muted)', maxHeight: '130px'}}>{getScript(site.token)}</pre>
+                <Button size="sm" onClick={() => copyScript(site.id, site.token)} className="absolute top-6 right-2" style={{backgroundColor: copied === site.id ? '#10b981' : 'var(--charcoal-mid)', color: copied === site.id ? 'white' : 'var(--text-muted)', border: '1px solid var(--line)', padding: '0.25rem 0.5rem', fontSize: '0.7rem'}}>
+                  {copied === site.id ? 'Скопировано!' : 'Копировать'}
+                </Button>
               </div>
             </div>
           ))}
