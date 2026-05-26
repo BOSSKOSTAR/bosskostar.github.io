@@ -1,7 +1,6 @@
 {
   "payment": "https://functions.poehali.dev/2f37ca7d-6e71-4e50-a5ad-6e3d30303a1c",
   "stats": "https://functions.poehali.dev/5ff833e6-2579-4cfa-bb41-275c81aa68be",
-  "push-send": "https://functions.poehali.dev/173ba231-42e9-401a-abd7-08cce3063f9d",
   "sites": "https://functions.poehali.dev/41ca0f1c-9ba7-4dde-8961-779ab034a1fc",
   "teasers": "https://functions.poehali.dev/695ff748-d1cf-4fd0-9a70-1c19f3b58418",
   "auth": "https://functions.poehali.dev/47298c23-bc8f-4dd4-93a4-014cb18cd9ca"

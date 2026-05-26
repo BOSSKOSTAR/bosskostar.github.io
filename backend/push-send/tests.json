@@ -1,1 +1,0 @@
-{"tests": [{"name": "Get active teasers without auth", "method": "GET", "path": "/", "expectedStatus": 401, "bodyMatcher": "partial", "expectedBody": {"error": "string"}}]}
