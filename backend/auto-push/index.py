@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key, E
 
 VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '').strip()
 VAPID_CLAIMS = {"sub": "mailto:admin@tizerpro.online"}
+SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
@@ -34,14 +35,14 @@ def handler(event: dict, context) -> dict:
     db = get_db()
     cur = db.cursor()
 
-    cur.execute("SELECT id, title, description, image_url, url FROM teasers WHERE status = 'active' AND budget > spent")
+    cur.execute(f"SELECT id, title, description, image_url, url FROM {SCHEMA}.teasers WHERE status = 'active' AND budget > spent")
     teasers = cur.fetchall()
 
     if not teasers:
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': 0, 'reason': 'Нет активных тизеров'})}
 
-    cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscribers")
+    cur.execute(f"SELECT id, endpoint, p256dh, auth FROM {SCHEMA}.push_subscribers WHERE endpoint != 'disabled'")
     subscribers = cur.fetchall()
 
     if not subscribers:
@@ -50,6 +51,7 @@ def handler(event: dict, context) -> dict:
 
     sent = 0
     dead = []
+    errors = []
 
     for teaser in teasers:
         teaser_id, title, description, image_url, url = teaser
@@ -71,12 +73,16 @@ def handler(event: dict, context) -> dict:
                 )
                 sent += 1
             except WebPushException as ex:
-                if ex.response and ex.response.status_code in (404, 410):
+                status = ex.response.status_code if ex.response else 0
+                errors.append({'sub_id': sub_id, 'status': status, 'error': str(ex)})
+                if status in (404, 410):
                     dead.append(sub_id)
+            except Exception as ex:
+                errors.append({'sub_id': sub_id, 'status': 0, 'error': str(ex)})
 
     for sub_id in set(dead):
-        cur.execute("DELETE FROM push_subscribers WHERE id = %s", (sub_id,))
+        cur.execute(f"UPDATE {SCHEMA}.push_subscribers SET endpoint = 'disabled' WHERE id = %s", (sub_id,))
 
     db.commit()
     db.close()
-    return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': sent, 'removed': len(set(dead))})}
+    return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': sent, 'removed': len(set(dead)), 'errors': errors})}
