@@ -1,0 +1,2 @@
+py-vapid>=1.9.0
+cryptography

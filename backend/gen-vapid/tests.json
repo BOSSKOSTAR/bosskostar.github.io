@@ -1,0 +1,1 @@
+{"tests": [{"name": "Generate VAPID keys", "method": "POST", "path": "/", "body": {}, "expectedStatus": 200, "bodyMatcher": "none"}]}
