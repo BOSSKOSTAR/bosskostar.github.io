@@ -27,7 +27,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{backgroundColor: 'var(--charcoal)'}}>
+    <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
         <h1 className="text-2xl font-bold font-display mb-6 text-center" style={{color: 'var(--gold)'}}>TizerPro</h1>
         <h2 className="text-xl font-bold mb-6 text-center" style={{color: 'var(--text-primary)'}}>Вход в систему</h2>

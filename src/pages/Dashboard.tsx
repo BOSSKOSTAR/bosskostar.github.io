@@ -16,13 +16,13 @@ export default function Dashboard() {
   }, [user, loading, navigate]);
 
   if (loading || !user) return (
-    <div className="min-h-screen flex items-center justify-center" style={{backgroundColor: 'var(--charcoal)'}}>
+    <div className="relative z-10 min-h-screen flex items-center justify-center" style={{backgroundColor: 'var(--charcoal)'}}>
       <div style={{color: 'var(--gold)'}}>Загрузка...</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen" style={{backgroundColor: 'var(--charcoal)', color: 'var(--text-primary)'}}>
+    <div className="relative z-10 min-h-screen" style={{color: 'var(--text-primary)'}}>
       {/* Header */}
       <header className="border-b px-6 py-4 flex items-center justify-between" style={{borderColor: 'var(--line)', backgroundColor: 'var(--charcoal-mid)'}}>
         <span className="text-xl font-bold font-display" style={{color: 'var(--gold)'}}>TizerPro</span>

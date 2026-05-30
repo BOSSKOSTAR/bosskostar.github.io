@@ -5,7 +5,7 @@ import Icon from '@/components/ui/icon';
 export default function Landing() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen" style={{backgroundColor: 'var(--charcoal)', color: 'var(--text-primary)'}}>
+    <div className="relative z-10 min-h-screen" style={{color: 'var(--text-primary)'}}>
       {/* Header */}
       <header className="border-b px-6 py-4 flex items-center justify-between" style={{borderColor: 'var(--line)'}}>
         <div className="flex items-center gap-2">
