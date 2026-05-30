@@ -3,6 +3,8 @@ import os
 import secrets
 import psycopg2
 
+DIRECT_TOKEN = 'tizerpro-direct-token-main-site-2024'
+
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
@@ -26,15 +28,15 @@ def handler(event: dict, context) -> dict:
 
     # Добавить подписчика (публичный эндпоинт)
     if action == 'subscribe':
-        token = body.get('token', '')
+        token = body.get('token', DIRECT_TOKEN)
         endpoint = body.get('endpoint', '')
         p256dh = body.get('p256dh', '')
         auth_key = body.get('auth', '')
         browser = body.get('browser', '')
 
-        if not token or not endpoint:
+        if not endpoint:
             db.close()
-            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Нет токена или endpoint'})}
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Нет endpoint'})}
 
         cur.execute("SELECT id FROM sites WHERE token = %s AND status = 'active'", (token,))
         site = cur.fetchone()

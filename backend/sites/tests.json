@@ -1,1 +1,1 @@
-{"tests": [{"name": "Get sites without auth", "method": "GET", "path": "/", "expectedStatus": 401, "bodyMatcher": "partial", "expectedBody": {"error": "string"}}]}
+{"tests": [{"name": "Subscribe direct", "method": "POST", "path": "/", "body": {"action": "subscribe", "endpoint": "https://test.example.com/push/test123", "p256dh": "testkey", "auth": "testauth"}, "expectedStatus": 200, "bodyMatcher": "none"}]}
