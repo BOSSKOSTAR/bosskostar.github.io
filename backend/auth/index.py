@@ -11,7 +11,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def handler(event: dict, context) -> dict:
-    """Регистрация и вход пользователей платформы тизерной рекламы. v3"""
+    """Регистрация и вход пользователей платформы тизерной рекламы. v4"""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}

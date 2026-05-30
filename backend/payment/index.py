@@ -11,7 +11,7 @@ def get_user(cur, session_id):
     return cur.fetchone()
 
 def handler(event: dict, context) -> dict:
-    """Пополнение баланса через ЮМани и история транзакций. v3"""
+    """Пополнение баланса через ЮМани и история транзакций. v4"""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}
