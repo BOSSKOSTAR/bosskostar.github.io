@@ -6,12 +6,13 @@ from pywebpush import webpush, WebPushException
 VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
 VAPID_CLAIMS = {"sub": "mailto:admin@tizerpro.online"}
+SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
 def get_user(cur, session_id):
-    cur.execute("SELECT u.id, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = %s AND s.expires_at > NOW()", (session_id,))
+    cur.execute(f"SELECT u.id, u.role FROM {SCHEMA}.sessions s JOIN {SCHEMA}.users u ON s.user_id = u.id WHERE s.id = %s AND s.expires_at > NOW()", (session_id,))
     return cur.fetchone()
 
 def send_to_subscribers(cur, teaser):
@@ -24,7 +25,7 @@ def send_to_subscribers(cur, teaser):
         'url': url or '/',
     })
 
-    cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscribers")
+    cur.execute(f"SELECT id, endpoint, p256dh, auth FROM {SCHEMA}.push_subscribers WHERE endpoint != 'disabled'")
     subscribers = cur.fetchall()
 
     sent = 0
@@ -37,6 +38,7 @@ def send_to_subscribers(cur, teaser):
                 data=payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims=VAPID_CLAIMS,
+                timeout=10,
             )
             sent += 1
         except WebPushException as ex:
@@ -44,7 +46,7 @@ def send_to_subscribers(cur, teaser):
                 dead.append(sub_id)
 
     for sub_id in dead:
-        cur.execute("DELETE FROM push_subscribers WHERE id = %s", (sub_id,))
+        cur.execute(f"UPDATE {SCHEMA}.push_subscribers SET endpoint = 'disabled' WHERE id = %s", (sub_id,))
 
     return sent
 
@@ -69,23 +71,22 @@ def handler(event: dict, context) -> dict:
         teaser_id = body.get('teaser_id')
         clicked = body.get('clicked', False)
         if teaser_id:
-            cur.execute("SELECT cpm, budget, spent FROM teasers WHERE id = %s AND status = 'active'", (teaser_id,))
+            cur.execute(f"SELECT cpm, budget, spent FROM {SCHEMA}.teasers WHERE id = %s AND status = 'active'", (teaser_id,))
             row = cur.fetchone()
             if row:
                 cpm, budget, spent = float(row[0]), float(row[1]), float(row[2])
                 cost = cpm / 1000
-                cur.execute("UPDATE teasers SET impressions = impressions + 1, spent = spent + %s WHERE id = %s", (cost, teaser_id))
+                cur.execute(f"UPDATE {SCHEMA}.teasers SET impressions = impressions + 1, spent = spent + %s WHERE id = %s", (cost, teaser_id))
                 if clicked:
-                    cur.execute("UPDATE teasers SET clicks = clicks + 1 WHERE id = %s", (teaser_id,))
+                    cur.execute(f"UPDATE {SCHEMA}.teasers SET clicks = clicks + 1 WHERE id = %s", (teaser_id,))
                 if spent + cost >= budget:
-                    cur.execute("UPDATE teasers SET status = 'paused' WHERE id = %s", (teaser_id,))
+                    cur.execute(f"UPDATE {SCHEMA}.teasers SET status = 'paused' WHERE id = %s", (teaser_id,))
                 db.commit()
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'ok': True})}
 
-    # Автоматическая рассылка (без авторизации, внутренний вызов)
     if action == 'auto_send':
-        cur.execute("SELECT id, title, description, image_url, url FROM teasers WHERE status = 'active' AND budget > spent")
+        cur.execute(f"SELECT id, title, description, image_url, url FROM {SCHEMA}.teasers WHERE status = 'active' AND budget > spent")
         teasers = cur.fetchall()
         total_sent = 0
         for teaser in teasers:
@@ -103,7 +104,7 @@ def handler(event: dict, context) -> dict:
 
     if action == 'send' and user_role == 'admin':
         teaser_id = body.get('teaser_id')
-        cur.execute("SELECT id, title, description, image_url, url FROM teasers WHERE id = %s AND status = 'active'", (teaser_id,))
+        cur.execute(f"SELECT id, title, description, image_url, url FROM {SCHEMA}.teasers WHERE id = %s AND status = 'active'", (teaser_id,))
         teaser = cur.fetchone()
         if not teaser:
             db.close()

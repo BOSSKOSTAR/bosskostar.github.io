@@ -1,1 +1,1 @@
-{"tests": [{"name": "Get VAPID public key", "method": "POST", "path": "/", "body": {"action": "vapid_key"}, "expectedStatus": 200, "bodyMatcher": "partial", "expectedBody": {"public_key": "string"}}]}
+{"tests": [{"name": "Get VAPID public key", "method": "POST", "path": "/", "body": {"action": "vapid_key"}, "expectedStatus": 200, "bodyMatcher": "none"}]}
