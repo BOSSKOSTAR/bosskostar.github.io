@@ -55,6 +55,14 @@ def handler(event: dict, context) -> dict:
     db = get_db()
     cur = db.cursor()
 
+    # Публичный список активных тизеров — без авторизации
+    if action == 'public_list':
+        cur.execute(f"SELECT id, title, description, image_url, url FROM {SCHEMA}.teasers WHERE status = 'active' AND budget > spent ORDER BY RANDOM() LIMIT 5")
+        rows = cur.fetchall()
+        teasers = [{'id': r[0], 'title': r[1], 'description': r[2], 'image_url': r[3], 'url': r[4]} for r in rows]
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'teasers': teasers})}
+
     user = get_user(cur, session_id)
     if not user:
         db.close()

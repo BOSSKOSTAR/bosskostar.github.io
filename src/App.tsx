@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ParticlesBg from "@/components/ui/particles-bg";
 import { usePushSubscribe } from "@/hooks/usePushSubscribe";
+import SideBanner from "@/components/SideBanner";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -28,6 +29,7 @@ const App = () => (
         <AuthProvider>
           <AppInner />
           <ParticlesBg />
+          <SideBanner />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
