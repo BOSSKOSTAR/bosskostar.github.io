@@ -37,7 +37,7 @@ const ParticlesBg = () => {
         y: Math.random() * canvas.height,
         vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 14 + 8,
+        size: Math.random() * 30 + 20,
         alpha: Math.random() * 0.3 + 0.1,
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.01,
