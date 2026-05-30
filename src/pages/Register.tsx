@@ -9,7 +9,8 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(searchParams.get('role') || 'advertiser');
+  const [role] = useState(searchParams.get('role') || 'advertiser');
+  const refCode = searchParams.get('ref') || '';
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -20,7 +21,7 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await register({ name, email, password, role });
+      await register({ name, email, password, role, ref_code: refCode });
       navigate('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ошибка регистрации');
@@ -33,8 +34,12 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{backgroundColor: 'var(--charcoal)'}}>
       <div className="w-full max-w-md p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
         <h1 className="text-2xl font-bold font-display mb-6 text-center" style={{color: 'var(--gold)'}}>TizerPro</h1>
-        <h2 className="text-xl font-bold mb-6 text-center" style={{color: 'var(--text-primary)'}}>Регистрация</h2>
-
+        <h2 className="text-xl font-bold mb-4 text-center" style={{color: 'var(--text-primary)'}}>Регистрация</h2>
+        {refCode && (
+          <div className="mb-4 px-3 py-2 rounded text-sm text-center" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)', color: 'var(--gold)'}}>
+            Вас пригласили — бонусы другу начислятся автоматически
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

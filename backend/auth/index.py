@@ -11,7 +11,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def handler(event: dict, context) -> dict:
-    """Регистрация и вход пользователей платформы тизерной рекламы"""
+    """Регистрация и вход пользователей платформы тизерной рекламы. v3"""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}
@@ -37,6 +37,7 @@ def handler(event: dict, context) -> dict:
         password = body.get('password', '')
         name = body.get('name', '').strip()
         role = body.get('role', 'advertiser')
+        ref_code = body.get('ref_code', '').strip().upper()
 
         if not email or not password or not name:
             db.close()
@@ -50,9 +51,19 @@ def handler(event: dict, context) -> dict:
             db.close()
             return {'statusCode': 409, 'headers': cors, 'body': json.dumps({'error': 'Email уже зарегистрирован'})}
 
-        cur.execute("INSERT INTO users (email, password_hash, name, role) VALUES (%s, %s, %s, %s) RETURNING id",
-                    (email, hash_password(password), name, role))
+        referred_by = None
+        if ref_code:
+            cur.execute("SELECT id FROM users WHERE ref_code = %s", (ref_code,))
+            ref_row = cur.fetchone()
+            if ref_row:
+                referred_by = ref_row[0]
+
+        cur.execute("INSERT INTO users (email, password_hash, name, role, referred_by) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                    (email, hash_password(password), name, role, referred_by))
         user_id = cur.fetchone()[0]
+
+        new_ref_code = secrets.token_hex(4).upper()
+        cur.execute("UPDATE users SET ref_code = %s WHERE id = %s", (new_ref_code, user_id))
 
         session_id = secrets.token_hex(32)
         cur.execute("INSERT INTO sessions (id, user_id) VALUES (%s, %s)", (session_id, user_id))
@@ -84,14 +95,14 @@ def handler(event: dict, context) -> dict:
     # Профиль
     if is_me:
         session_id = event.get('headers', {}).get('X-Session-Id', '')
-        cur.execute("SELECT u.id, u.name, u.email, u.role, u.balance FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = %s AND s.expires_at > NOW()", (session_id,))
+        cur.execute("SELECT u.id, u.name, u.email, u.role, u.balance, u.ref_code FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = %s AND s.expires_at > NOW()", (session_id,))
         user = cur.fetchone()
         db.close()
 
         if not user:
             return {'statusCode': 401, 'headers': cors, 'body': json.dumps({'error': 'Не авторизован'})}
 
-        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': user[0], 'name': user[1], 'email': user[2], 'role': user[3], 'balance': float(user[4])})}
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': user[0], 'name': user[1], 'email': user[2], 'role': user[3], 'balance': float(user[4]), 'ref_code': user[5]})}
 
     # Выход
     if method == 'POST' and is_logout:

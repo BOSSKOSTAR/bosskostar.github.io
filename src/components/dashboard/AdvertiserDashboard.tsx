@@ -29,6 +29,9 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
+  const [showReferral, setShowReferral] = useState(false);
+  const [refData, setRefData] = useState<{ref_code: string; referrals_count: number; total_earned: number} | null>(null);
+  const [refCopied, setRefCopied] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -40,6 +43,24 @@ export default function AdvertiserDashboard({ user }: Props) {
     if (s.total_teasers !== undefined) setStats(s);
     const me = await api.me();
     if (me.balance !== undefined) setBalance(me.balance);
+  };
+
+  const loadReferral = async () => {
+    const res = await api.getReferral();
+    if (res.ref_code !== undefined) setRefData(res);
+  };
+
+  const handleShowReferral = () => {
+    setShowReferral(!showReferral);
+    if (!refData) loadReferral();
+  };
+
+  const copyRefLink = () => {
+    if (!refData) return;
+    const link = `${window.location.origin}/register?ref=${refData.ref_code}`;
+    navigator.clipboard.writeText(link);
+    setRefCopied(true);
+    setTimeout(() => setRefCopied(false), 2000);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -97,14 +118,50 @@ export default function AdvertiserDashboard({ user }: Props) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-6 flex-wrap">
         <Button onClick={() => setShowCreateForm(!showCreateForm)} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
           <Icon name="Plus" size={16} className="mr-2" /> Создать тизер
         </Button>
         <Button variant="outline" onClick={() => setShowPayment(!showPayment)} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
           <Icon name="CreditCard" size={16} className="mr-2" /> Пополнить баланс
         </Button>
+        <Button variant="outline" onClick={handleShowReferral} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
+          <Icon name="Users" size={16} className="mr-2" /> Реферальная программа
+        </Button>
       </div>
+
+      {/* Referral block */}
+      {showReferral && (
+        <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+          <h3 className="font-bold mb-1">Реферальная программа</h3>
+          <p className="text-sm mb-4" style={{color: 'var(--text-muted)'}}>Приглашайте друзей — получайте <span style={{color: 'var(--gold)'}}>5%</span> с каждого их пополнения навсегда</p>
+          {refData ? (
+            <>
+              <div className="flex gap-3 items-center mb-4">
+                <div className="flex-1 px-3 py-2 rounded text-sm font-mono" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-primary)'}}>
+                  {`${window.location.origin}/register?ref=${refData.ref_code}`}
+                </div>
+                <Button onClick={copyRefLink} style={{backgroundColor: 'var(--gold)', color: '#111318', minWidth: 90}}>
+                  <Icon name={refCopied ? 'Check' : 'Copy'} size={16} className="mr-2" />
+                  {refCopied ? 'Скопировано' : 'Копировать'}
+                </Button>
+              </div>
+              <div className="flex gap-6">
+                <div>
+                  <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Приглашено</div>
+                  <div className="text-xl font-bold font-display" style={{color: 'var(--text-primary)'}}>{refData.referrals_count}</div>
+                </div>
+                <div>
+                  <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Заработано</div>
+                  <div className="text-xl font-bold font-display" style={{color: 'var(--gold)'}}>{refData.total_earned.toFixed(2)} ₽</div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-sm" style={{color: 'var(--text-muted)'}}>Загрузка...</div>
+          )}
+        </div>
+      )}
 
       {/* Payment form */}
       {showPayment && (

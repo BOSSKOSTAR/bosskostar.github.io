@@ -40,4 +40,5 @@ export const api = {
   getStats: () => request(URLS.stats, 'POST', { action: 'get' }),
   getTransactions: () => request(URLS.payment, 'POST', { action: 'list' }),
   createPayment: (amount: number) => request(URLS.payment, 'POST', { action: 'create', amount }),
+  getReferral: () => request(URLS.payment, 'POST', { action: 'referral' }),
 };

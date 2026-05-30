@@ -11,7 +11,7 @@ def get_user(cur, session_id):
     return cur.fetchone()
 
 def handler(event: dict, context) -> dict:
-    """Пополнение баланса через ЮМани и история транзакций. v2"""
+    """Пополнение баланса через ЮМани и история транзакций. v3"""
 
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}
@@ -56,11 +56,21 @@ def handler(event: dict, context) -> dict:
         if label:
             try:
                 user_id = int(label)
-                cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
-                if cur.fetchone():
-                    cur.execute("UPDATE users SET balance = balance + %s WHERE id = %s", (float(amount), user_id))
+                cur.execute("SELECT id, referred_by FROM users WHERE id = %s", (user_id,))
+                row = cur.fetchone()
+                if row:
+                    paid = float(amount)
+                    cur.execute("UPDATE users SET balance = balance + %s WHERE id = %s", (paid, user_id))
                     cur.execute("INSERT INTO transactions (user_id, amount, type, description, payment_id) VALUES (%s, %s, 'deposit', 'Пополнение через ЮМани', %s)",
-                                (user_id, float(amount), operation_id))
+                                (user_id, paid, operation_id))
+                    referred_by = row[1]
+                    if referred_by:
+                        bonus = round(paid * 0.05, 2)
+                        cur.execute("UPDATE users SET balance = balance + %s WHERE id = %s", (bonus, referred_by))
+                        cur.execute("INSERT INTO transactions (user_id, amount, type, description, payment_id) VALUES (%s, %s, 'referral', %s, %s)",
+                                    (referred_by, bonus, f'Реферальный бонус 5% от пополнения пользователя #{user_id}', operation_id + '_ref'))
+                        cur.execute("INSERT INTO referral_bonuses (referrer_id, referee_id, amount, source_amount) VALUES (%s, %s, %s, %s)",
+                                    (referred_by, user_id, bonus, paid))
                     db.commit()
             except Exception:
                 pass
@@ -95,6 +105,16 @@ def handler(event: dict, context) -> dict:
         transactions = [{'id': r[0], 'amount': float(r[1]), 'type': r[2], 'description': r[3], 'created_at': str(r[4])} for r in rows]
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'transactions': transactions, 'balance': float(user_balance)})}
+
+    # Реферальная статистика
+    if action == 'referral':
+        cur.execute("SELECT ref_code FROM users WHERE id = %s", (user_id,))
+        ref_row = cur.fetchone()
+        ref_code = ref_row[0] if ref_row else ''
+        cur.execute("SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM referral_bonuses WHERE referrer_id = %s", (user_id,))
+        stats = cur.fetchone()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'ref_code': ref_code, 'referrals_count': stats[0], 'total_earned': float(stats[1])})}
 
     db.close()
     return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Not found'})}
