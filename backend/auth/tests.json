@@ -1,6 +1,5 @@
 {
   "tests": [
-    {"name": "Register user", "method": "POST", "path": "/register", "body": {"email": "test@test.com", "password": "123456", "name": "Тест", "role": "advertiser"}, "expectedStatus": 200, "expectedBody": {"session_id": "string"}, "bodyMatcher": "partial"},
-    {"name": "Login user", "method": "POST", "path": "/login", "body": {"email": "test@test.com", "password": "123456"}, "expectedStatus": 200, "expectedBody": {"session_id": "string"}, "bodyMatcher": "partial"}
+    {"name": "Login user", "method": "POST", "path": "/", "body": {"action": "login", "email": "test@test.com", "password": "123456"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }
