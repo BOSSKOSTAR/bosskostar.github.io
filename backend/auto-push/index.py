@@ -70,6 +70,7 @@ def handler(event: dict, context) -> dict:
                     data=payload,
                     vapid_private_key=private_key,
                     vapid_claims=VAPID_CLAIMS,
+                    timeout=10,
                 )
                 sent += 1
             except WebPushException as ex:
