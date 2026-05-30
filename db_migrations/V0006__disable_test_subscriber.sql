@@ -1,0 +1,1 @@
+UPDATE t_p48437139_create_project_4.push_subscribers SET endpoint = 'disabled' WHERE endpoint = 'https://test.example.com/push/test123';
