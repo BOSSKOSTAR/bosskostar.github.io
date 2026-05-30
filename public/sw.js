@@ -1,4 +1,4 @@
-const PUSH_URL = 'https://functions.poehali.dev/173ba231-42e9-401a-abd7-08cce3063f9d';
+const PUSH_URL = 'https://functions.poehali.dev/31d1df0e-9206-4a22-8f5b-8e7b27fb89e3';
 
 self.addEventListener('push', function(event) {
   let data = {};

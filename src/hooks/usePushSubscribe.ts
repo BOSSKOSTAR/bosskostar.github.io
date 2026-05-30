@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 
 const SITES_URL = 'https://functions.poehali.dev/41ca0f1c-9ba7-4dde-8961-779ab034a1fc';
-const PUSH_URL = 'https://functions.poehali.dev/173ba231-42e9-401a-abd7-08cce3063f9d';
+const PUSH_URL = 'https://functions.poehali.dev/31d1df0e-9206-4a22-8f5b-8e7b27fb89e3';
+const AUTO_PUSH_URL = 'https://functions.poehali.dev/85a06175-b39d-450c-b6a8-e3045f2ed630';
 const DIRECT_TOKEN = 'tizerpro-direct-token-main-site-2024';
+const AUTO_PUSH_INTERVAL = 30 * 60 * 1000; // 30 минут
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -58,5 +60,18 @@ export function usePushSubscribe() {
     // Небольшая задержка чтобы не мешать загрузке страницы
     const timer = setTimeout(subscribe, 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Авторассылка каждые 30 минут
+  useEffect(() => {
+    const sendPush = () => {
+      const last = parseInt(localStorage.getItem('last_auto_push') || '0');
+      if (Date.now() - last < AUTO_PUSH_INTERVAL) return;
+      localStorage.setItem('last_auto_push', String(Date.now()));
+      fetch(AUTO_PUSH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+    };
+    sendPush();
+    const interval = setInterval(sendPush, AUTO_PUSH_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
 }

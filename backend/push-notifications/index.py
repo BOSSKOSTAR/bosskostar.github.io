@@ -1,8 +1,11 @@
 import json
 import os
 import psycopg2
+from pywebpush import webpush, WebPushException
 
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
 VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_CLAIMS = {"sub": "mailto:admin@tizerpro.online"}
 
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
@@ -10,6 +13,40 @@ def get_db():
 def get_user(cur, session_id):
     cur.execute("SELECT u.id, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = %s AND s.expires_at > NOW()", (session_id,))
     return cur.fetchone()
+
+def send_to_subscribers(cur, teaser):
+    teaser_id, title, description, image_url, url = teaser
+    payload = json.dumps({
+        'teaser_id': teaser_id,
+        'title': title,
+        'body': description or '',
+        'icon': image_url or '/icon-192.png',
+        'url': url or '/',
+    })
+
+    cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscribers")
+    subscribers = cur.fetchall()
+
+    sent = 0
+    dead = []
+    for sub in subscribers:
+        sub_id, endpoint, p256dh, auth = sub
+        try:
+            webpush(
+                subscription_info={'endpoint': endpoint, 'keys': {'p256dh': p256dh, 'auth': auth}},
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims=VAPID_CLAIMS,
+            )
+            sent += 1
+        except WebPushException as ex:
+            if ex.response and ex.response.status_code in (404, 410):
+                dead.append(sub_id)
+
+    for sub_id in dead:
+        cur.execute("DELETE FROM push_subscribers WHERE id = %s", (sub_id,))
+
+    return sent
 
 def handler(event: dict, context) -> dict:
     """Push-уведомления: VAPID ключ, показы, рассылка"""
@@ -46,6 +83,17 @@ def handler(event: dict, context) -> dict:
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'ok': True})}
 
+    # Автоматическая рассылка (без авторизации, внутренний вызов)
+    if action == 'auto_send':
+        cur.execute("SELECT id, title, description, image_url, url FROM teasers WHERE status = 'active' AND budget > spent")
+        teasers = cur.fetchall()
+        total_sent = 0
+        for teaser in teasers:
+            total_sent += send_to_subscribers(cur, teaser)
+        db.commit()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': total_sent})}
+
     user = get_user(cur, session_id)
     if not user:
         db.close()
@@ -55,15 +103,15 @@ def handler(event: dict, context) -> dict:
 
     if action == 'send' and user_role == 'admin':
         teaser_id = body.get('teaser_id')
-        cur.execute("SELECT id, title FROM teasers WHERE id = %s AND status = 'active'", (teaser_id,))
+        cur.execute("SELECT id, title, description, image_url, url FROM teasers WHERE id = %s AND status = 'active'", (teaser_id,))
         teaser = cur.fetchone()
         if not teaser:
             db.close()
             return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Тизер не найден'})}
-        cur.execute("SELECT COUNT(*) FROM push_subscribers")
-        count = cur.fetchone()[0]
+        sent = send_to_subscribers(cur, teaser)
+        db.commit()
         db.close()
-        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': count, 'failed': 0})}
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'sent': sent, 'failed': 0})}
 
     db.close()
     return {'statusCode': 404, 'headers': cors, 'body': json.dumps({'error': 'Not found'})}
