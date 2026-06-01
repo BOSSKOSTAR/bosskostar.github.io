@@ -28,6 +28,8 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [payAmount, setPayAmount] = useState('500');
   const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageUploading, setImageUploading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
   const [showReferral, setShowReferral] = useState(false);
   const [refData, setRefData] = useState<{ref_code: string; referrals_count: number; total_earned: number} | null>(null);
@@ -63,6 +65,28 @@ export default function AdvertiserDashboard({ user }: Props) {
     setTimeout(() => setRefCopied(false), 2000);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const b64 = (ev.target?.result as string).split(',')[1];
+      const res = await fetch('https://functions.poehali.dev/6b199405-f08d-42ce-9abc-e36ebb9f2c9f', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, content_type: file.type }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        setForm(f => ({ ...f, image_url: data.url }));
+        setImagePreview(data.url);
+      }
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +95,7 @@ export default function AdvertiserDashboard({ user }: Props) {
     if (!res.error) {
       setShowCreateForm(false);
       setForm({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
+      setImagePreview('');
       loadData();
     } else {
       alert(res.error);
@@ -197,8 +222,20 @@ export default function AdvertiserDashboard({ user }: Props) {
                 <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Короткое описание" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
               </div>
               <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>URL картинки</label>
-                <Input value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} placeholder="https://..." style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Картинка</label>
+                <label className="flex flex-col items-center justify-center w-full h-24 rounded-lg cursor-pointer border-2 border-dashed transition-colors overflow-hidden relative" style={{borderColor: 'var(--line)', backgroundColor: 'var(--charcoal)'}}>
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                  ) : imageUploading ? (
+                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>Загрузка...</span>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <Icon name="Upload" size={20} style={{color: 'var(--text-muted)'}} />
+                      <span className="text-xs" style={{color: 'var(--text-muted)'}}>Нажмите для загрузки</span>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
+                </label>
               </div>
               <div>
                 <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
@@ -213,7 +250,7 @@ export default function AdvertiserDashboard({ user }: Props) {
               <Button type="submit" disabled={loading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
                 {loading ? 'Создаём...' : 'Создать тизер'}
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowCreateForm(false)} style={{color: 'var(--text-muted)'}}>Отмена</Button>
+              <Button type="button" variant="ghost" onClick={() => { setShowCreateForm(false); setImagePreview(''); }} style={{color: 'var(--text-muted)'}}>Отмена</Button>
             </div>
           </form>
         </div>
