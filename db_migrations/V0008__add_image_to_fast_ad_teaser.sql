@@ -1,0 +1,1 @@
+UPDATE t_p48437139_create_project_4.teasers SET image_url = 'https://cdn.poehali.dev/projects/02e31793-b8ad-4be8-8513-9796d55c4640/files/c38347b8-a674-42c8-8c19-585f6c98b2ef.jpg' WHERE id = 2;
