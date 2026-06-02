@@ -55,6 +55,13 @@ def handler(event: dict, context) -> dict:
     db = get_db()
     cur = db.cursor()
 
+    # Публичная статистика для лендинга — без авторизации
+    if action == 'public_stats':
+        cur.execute(f"SELECT COALESCE(SUM(impressions),0), COALESCE(SUM(clicks),0) FROM {SCHEMA}.teasers")
+        row = cur.fetchone()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'impressions': int(row[0]), 'clicks': int(row[1])})}
+
     # Публичный список активных тизеров — без авторизации
     if action == 'public_list':
         cur.execute(f"SELECT id, title, description, image_url, url FROM {SCHEMA}.teasers WHERE status = 'active' AND budget > spent ORDER BY RANDOM() LIMIT 5")
