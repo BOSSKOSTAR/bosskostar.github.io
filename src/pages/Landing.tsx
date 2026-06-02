@@ -82,8 +82,8 @@ export default function Landing() {
         {/* Live stats */}
         <div className="flex justify-center gap-10 flex-wrap">
           {[
-            { value: totalImpressions.toLocaleString('+'), label: 'показов выдано' },
-            { value: totalClicks.toLocaleString('+'), label: 'кликов получено' },
+            { value: totalImpressions.toLocaleString('ru') + '+', label: 'показов выдано' },
+            { value: totalClicks.toLocaleString('ru') + '+', label: 'кликов получено' },
             { value: 'от 50 ₽', label: 'за 1000 показов' },
           ].map(s => (
             <div key={s.label} className="text-center">
