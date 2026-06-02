@@ -7,9 +7,17 @@ interface Particle {
   vy: number;
   size: number;
   alpha: number;
+  alphaDir: number;
   rotation: number;
   rotSpeed: number;
+  symbol: string;
+  color: string;
+  pulse: number;
+  pulseSpeed: number;
 }
+
+const SYMBOLS = ["$", "$", "$", "₽", "✦", "◆"];
+const COLORS = ["#d4af37", "#f0c040", "#c9a84c", "#ffd700", "#e8c96a"];
 
 const ParticlesBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,7 +30,7 @@ const ParticlesBg = () => {
 
     let animId: number;
     const particles: Particle[] = [];
-    const COUNT = 50;
+    const COUNT = 80;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -33,14 +41,19 @@ const ParticlesBg = () => {
 
     for (let i = 0; i < COUNT; i++) {
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 30 + 20,
-        alpha: Math.random() * 0.3 + 0.1,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: (Math.random() - 0.5) * 0.7,
+        size: Math.random() * 22 + 10,
+        alpha: Math.random() * 0.35 + 0.08,
+        alphaDir: Math.random() > 0.5 ? 1 : -1,
         rotation: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.01,
+        rotSpeed: (Math.random() - 0.5) * 0.015,
+        symbol: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        pulse: Math.random() * Math.PI * 2,
+        pulseSpeed: Math.random() * 0.02 + 0.005,
       });
     }
 
@@ -51,21 +64,36 @@ const ParticlesBg = () => {
         p.x += p.vx;
         p.y += p.vy;
         p.rotation += p.rotSpeed;
+        p.pulse += p.pulseSpeed;
 
-        if (p.x < -30) p.x = canvas.width + 30;
-        if (p.x > canvas.width + 30) p.x = -30;
-        if (p.y < -30) p.y = canvas.height + 30;
-        if (p.y > canvas.height + 30) p.y = -30;
+        // Мягкое пульсирование прозрачности
+        p.alpha += p.alphaDir * 0.002;
+        if (p.alpha > 0.45) p.alphaDir = -1;
+        if (p.alpha < 0.05) p.alphaDir = 1;
+
+        if (p.x < -40) p.x = canvas.width + 40;
+        if (p.x > canvas.width + 40) p.x = -40;
+        if (p.y < -40) p.y = canvas.height + 40;
+        if (p.y > canvas.height + 40) p.y = -40;
+
+        const scale = 1 + Math.sin(p.pulse) * 0.12;
 
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
+        ctx.scale(scale, scale);
         ctx.globalAlpha = p.alpha;
+
+        // Свечение вокруг символа
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 12;
+
         ctx.font = `bold ${p.size}px Arial`;
-        ctx.fillStyle = `#c9a84c`;
+        ctx.fillStyle = p.color;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("$", 0, 0);
+        ctx.fillText(p.symbol, 0, 0);
+
         ctx.restore();
       }
 
