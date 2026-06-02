@@ -17,7 +17,7 @@ interface Particle {
 }
 
 const SYMBOLS = ["$", "✦", "$", "✦", "$", "✦", "★"];
-const COLORS = ["#ff6a00", "#ff8c38", "#ff4500", "#ffaa55", "#ff5500"];
+const COLORS = ["#ffd700", "#ffec44", "#ffc200", "#ffe066", "#f5c400"];
 
 const ParticlesBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,7 +45,7 @@ const ParticlesBg = () => {
         y: Math.random() * window.innerHeight,
         vx: (Math.random() - 0.5) * 0.7,
         vy: (Math.random() - 0.5) * 0.7,
-        size: Math.random() * 40 + 24,
+        size: Math.random() * 50 + 36,
         alpha: Math.random() * 0.35 + 0.08,
         alphaDir: Math.random() > 0.5 ? 1 : -1,
         rotation: Math.random() * Math.PI * 2,

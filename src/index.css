@@ -13,7 +13,7 @@
     --popover: 220 14% 11%;
     --popover-foreground: 40 20% 92%;
 
-    --primary: 22 100% 50%;
+    --primary: 28 100% 60%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 25 20% 13%;
@@ -34,11 +34,11 @@
 
     --radius: 0.25rem;
 
-    --gold: #ff6a00;
-    --gold-light: #ff8c38;
-    --charcoal: #0f0a05;
-    --charcoal-mid: #1a1008;
-    --charcoal-light: #26180d;
+    --gold: #ff9a3c;
+    --gold-light: #ffb96a;
+    --charcoal: #120d06;
+    --charcoal-mid: #1e1509;
+    --charcoal-light: #2c1e0e;
     --text-primary: #fff8f0;
     --text-muted: #a08060;
     --line: #4a2e0f;
