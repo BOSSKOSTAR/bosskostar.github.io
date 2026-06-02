@@ -38,6 +38,7 @@ export const api = {
 
   sendPush: (teaser_id: number) => request(URLS.pushSend, 'POST', { action: 'send', teaser_id }),
   getStats: () => request(URLS.stats, 'POST', { action: 'get' }),
+  getDailyStats: (days = 14) => request(URLS.stats, 'POST', { action: 'daily_stats', days }),
   getTransactions: () => request(URLS.payment, 'POST', { action: 'list' }),
   createPayment: (amount: number) => request(URLS.payment, 'POST', { action: 'create', amount }),
   getReferral: () => request(URLS.payment, 'POST', { action: 'referral' }),

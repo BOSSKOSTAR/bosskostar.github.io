@@ -16,6 +16,8 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token, X-Session-Id', 'Access-Control-Max-Age': '86400'}, 'body': ''}
 
     cors = {'Access-Control-Allow-Origin': '*'}
+    body = json.loads(event.get('body') or '{}')
+    action = body.get('action', 'get')
     session_id = event.get('headers', {}).get('X-Session-Id', '')
 
     db = get_db()
@@ -50,7 +52,27 @@ def handler(event: dict, context) -> dict:
         })}
 
     elif user_role == 'advertiser':
-        cur.execute("SELECT COUNT(*), COALESCE(SUM(impressions),0), COALESCE(SUM(clicks),0), COALESCE(SUM(spent),0), COALESCE(SUM(budget),0) FROM teasers WHERE user_id = %s", (user_id,))
+        SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
+
+        if action == 'daily_stats':
+            days = int(body.get('days', 14))
+            cur.execute(f"""
+                SELECT DATE(i.created_at) as day,
+                       COUNT(*) as impressions,
+                       SUM(CASE WHEN i.clicked THEN 1 ELSE 0 END) as clicks
+                FROM {SCHEMA}.impressions i
+                JOIN {SCHEMA}.teasers t ON i.teaser_id = t.id
+                WHERE t.user_id = %s AND i.created_at >= NOW() - INTERVAL '{days} days'
+                GROUP BY DATE(i.created_at)
+                ORDER BY day ASC
+            """, (user_id,))
+            rows = cur.fetchall()
+            db.close()
+            return {'statusCode': 200, 'headers': cors, 'body': json.dumps({
+                'daily': [{'date': str(r[0]), 'impressions': r[1], 'clicks': r[2]} for r in rows]
+            })}
+
+        cur.execute(f"SELECT COUNT(*), COALESCE(SUM(impressions),0), COALESCE(SUM(clicks),0), COALESCE(SUM(spent),0), COALESCE(SUM(budget),0) FROM {SCHEMA}.teasers WHERE user_id = %s", (user_id,))
         r = cur.fetchone()
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({

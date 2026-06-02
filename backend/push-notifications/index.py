@@ -81,6 +81,7 @@ def handler(event: dict, context) -> dict:
                     cur.execute(f"UPDATE {SCHEMA}.teasers SET clicks = clicks + 1 WHERE id = %s", (teaser_id,))
                 if spent + cost >= budget:
                     cur.execute(f"UPDATE {SCHEMA}.teasers SET status = 'paused' WHERE id = %s", (teaser_id,))
+                cur.execute(f"INSERT INTO {SCHEMA}.impressions (teaser_id, clicked, cost) VALUES (%s, %s, %s)", (teaser_id, clicked, cost))
                 db.commit()
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'ok': True})}
