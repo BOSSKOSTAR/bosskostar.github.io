@@ -16,8 +16,8 @@ interface Particle {
   pulseSpeed: number;
 }
 
-const SYMBOLS = ["$", "$", "$", "₽", "✦", "◆"];
-const COLORS = ["#d4af37", "#f0c040", "#c9a84c", "#ffd700", "#e8c96a"];
+const SYMBOLS = ["✦", "◆", "$", "✦", "◆", "✧", "⬡"];
+const COLORS = ["#a855f7", "#c084fc", "#9333ea", "#d8b4fe", "#7c3aed"];
 
 const ParticlesBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -86,7 +86,7 @@ const ParticlesBg = () => {
 
         // Свечение вокруг символа
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18;
 
         ctx.font = `bold ${p.size}px Arial`;
         ctx.fillStyle = p.color;
