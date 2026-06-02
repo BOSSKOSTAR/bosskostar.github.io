@@ -13,7 +13,7 @@
     --popover: 220 14% 11%;
     --popover-foreground: 40 20% 92%;
 
-    --primary: 25 95% 53%;
+    --primary: 22 100% 50%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 25 20% 13%;
@@ -34,14 +34,14 @@
 
     --radius: 0.25rem;
 
-    --gold: #f97316;
-    --gold-light: #fb923c;
-    --charcoal: #110c07;
-    --charcoal-mid: #1c1209;
-    --charcoal-light: #271a0e;
-    --text-primary: #fdf4ec;
-    --text-muted: #8e7a65;
-    --line: #3a2510;
+    --gold: #ff6a00;
+    --gold-light: #ff8c38;
+    --charcoal: #0f0a05;
+    --charcoal-mid: #1a1008;
+    --charcoal-light: #26180d;
+    --text-primary: #fff8f0;
+    --text-muted: #a08060;
+    --line: #4a2e0f;
 
     --sidebar-background: 25 20% 9%;
     --sidebar-foreground: 25 10% 92%;

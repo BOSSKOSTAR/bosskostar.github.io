@@ -17,7 +17,7 @@ interface Particle {
 }
 
 const SYMBOLS = ["$", "✦", "$", "✦", "$", "✦", "★"];
-const COLORS = ["#f97316", "#fb923c", "#ea580c", "#fdba74", "#c2410c"];
+const COLORS = ["#ff6a00", "#ff8c38", "#ff4500", "#ffaa55", "#ff5500"];
 
 const ParticlesBg = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
