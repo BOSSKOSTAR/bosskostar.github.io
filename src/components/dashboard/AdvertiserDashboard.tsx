@@ -148,43 +148,48 @@ export default function AdvertiserDashboard({ user }: Props) {
       )}
 
       {/* Chart */}
-      {daily.length > 0 && (() => {
-        const W = 600, H = 120, PAD = 8;
-        const maxImp = Math.max(...daily.map(d => d.impressions), 1);
-        const points = daily.map((d, i) => {
-          const x = PAD + (i / (daily.length - 1 || 1)) * (W - PAD * 2);
-          const y = H - PAD - (d.impressions / maxImp) * (H - PAD * 2);
+      {(() => {
+        const W = 600, H = 100, PAD = 10;
+        const hasData = daily.length >= 2;
+        const maxImp = hasData ? Math.max(...daily.map(d => d.impressions), 1) : 1;
+
+        const linePoints = (key: 'impressions' | 'clicks') => daily.map((d, i) => {
+          const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
+          const y = H - PAD - (d[key] / maxImp) * (H - PAD * 2);
           return `${x},${y}`;
         }).join(' ');
-        const clickPoints = daily.map((d, i) => {
-          const x = PAD + (i / (daily.length - 1 || 1)) * (W - PAD * 2);
-          const y = H - PAD - (d.clicks / maxImp) * (H - PAD * 2);
-          return `${x},${y}`;
-        }).join(' ');
+
         return (
           <div className="mb-6 p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-sm">График за 14 дней</h3>
               <div className="flex gap-4 text-xs" style={{color: 'var(--text-muted)'}}>
-                <span className="flex items-center gap-1"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: 'var(--gold)'}} /> Показы</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: '#60a5fa'}} /> Клики</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: 'var(--gold)'}} />Показы</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: '#60a5fa'}} />Клики</span>
               </div>
             </div>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{height: 120}}>
-              <polyline fill="none" stroke="var(--gold)" strokeWidth="2" strokeLinejoin="round" points={points} opacity="0.9" />
-              <polyline fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinejoin="round" points={clickPoints} opacity="0.9" />
-              {daily.map((d, i) => {
-                const x = PAD + (i / (daily.length - 1 || 1)) * (W - PAD * 2);
-                const y = H - PAD - (d.impressions / maxImp) * (H - PAD * 2);
-                return <circle key={i} cx={x} cy={y} r="3" fill="var(--gold)" />;
-              })}
-            </svg>
-            <div className="flex justify-between mt-1" style={{color: 'var(--text-muted)'}}>
-              {daily.length > 1 && <>
-                <span className="text-xs">{daily[0].date.slice(5)}</span>
-                <span className="text-xs">{daily[daily.length - 1].date.slice(5)}</span>
-              </>}
-            </div>
+            {hasData ? (
+              <>
+                <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{height: 100}}>
+                  <polyline fill="none" stroke="var(--gold)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={linePoints('impressions')} />
+                  <polyline fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={linePoints('clicks')} />
+                  {daily.map((d, i) => {
+                    const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
+                    const y = H - PAD - (d.impressions / maxImp) * (H - PAD * 2);
+                    return <circle key={i} cx={x} cy={y} r="3" fill="var(--gold)" />;
+                  })}
+                </svg>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[0].date.slice(5)}</span>
+                  <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[daily.length - 1].date.slice(5)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center py-6 text-xs" style={{color: 'var(--text-muted)'}}>
+                <Icon name="BarChart2" size={16} className="mr-2 opacity-40" />
+                Данные накапливаются — график появится через несколько дней
+              </div>
+            )}
           </div>
         );
       })()}
