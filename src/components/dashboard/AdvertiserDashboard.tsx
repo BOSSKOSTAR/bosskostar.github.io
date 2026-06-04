@@ -3,20 +3,11 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
-
-interface Teaser {
-  id: number;
-  title: string;
-  description: string;
-  url: string;
-  image_url: string;
-  status: string;
-  budget: number;
-  spent: number;
-  impressions: number;
-  clicks: number;
-  cpm: number;
-}
+import TeaserTab from './TeaserTab';
+import type { Teaser } from './TeaserTab';
+import PopupTab from './PopupTab';
+import YoutubeTab from './YoutubeTab';
+import EditTeaserModal from './EditTeaserModal';
 
 interface Props { user: { id: number; name: string; balance: number; role: string } }
 
@@ -29,19 +20,8 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [payAmount, setPayAmount] = useState('500');
-  const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
-  const [popupForm, setPopupForm] = useState({ title: '', url: '', budget: '500' });
-  const [youtubeForm, setYoutubeForm] = useState({ video_url: '', budget: '500' });
-  const [loading, setLoading] = useState(false);
-  const [popupLoading, setPopupLoading] = useState(false);
-  const [youtubeLoading, setYoutubeLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [imageUploading, setImageUploading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
   const [editTeaser, setEditTeaser] = useState<Teaser | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', url: '', image_url: '' });
-  const [editLoading, setEditLoading] = useState(false);
-  const [editImagePreview, setEditImagePreview] = useState('');
   const [showReferral, setShowReferral] = useState(false);
   const [refData, setRefData] = useState<{ref_code: string; referrals_count: number; total_earned: number} | null>(null);
   const [refCopied, setRefCopied] = useState(false);
@@ -79,518 +59,191 @@ export default function AdvertiserDashboard({ user }: Props) {
     setTimeout(() => setRefCopied(false), 2000);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const b64 = (ev.target?.result as string).split(',')[1];
-      const res = await fetch('https://functions.poehali.dev/6b199405-f08d-42ce-9abc-e36ebb9f2c9f', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: b64, content_type: file.type }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        setForm(f => ({ ...f, image_url: data.url }));
-        setImagePreview(data.url);
-      }
-      setImageUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const openEditTeaser = (t: Teaser) => {
-    setEditTeaser(t);
-    setEditForm({ title: t.title, description: t.description || '', url: t.url, image_url: t.image_url || '' });
-    setEditImagePreview(t.image_url || '');
-  };
-
-  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const b64 = (ev.target?.result as string).split(',')[1];
-      const res = await fetch('https://functions.poehali.dev/6b199405-f08d-42ce-9abc-e36ebb9f2c9f', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: b64, content_type: file.type }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        setEditForm(f => ({ ...f, image_url: data.url }));
-        setEditImagePreview(data.url);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleEditSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editTeaser) return;
-    setEditLoading(true);
-    const res = await api.updateTeaser({ id: editTeaser.id, ...editForm });
-    setEditLoading(false);
-    if (!res.error) {
-      setEditTeaser(null);
-      loadData();
-    } else {
-      alert(res.error);
-    }
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const res = await api.createTeaser({ ...form, budget: parseFloat(form.budget), cpm: parseFloat(form.cpm) });
-    setLoading(false);
-    if (!res.error) {
-      setShowCreateForm(false);
-      setForm({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
-      setImagePreview('');
-      loadData();
-    } else {
-      alert(res.error);
-    }
-  };
-
-  const handleCreatePopup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPopupLoading(true);
-    const res = await api.createPopupAd({ ...popupForm, budget: parseFloat(popupForm.budget) });
-    setPopupLoading(false);
-    if (!res.error) {
-      setPopupForm({ title: '', url: '', budget: '500' });
-      alert('POPUP-кампания создана и отправлена на модерацию!');
-    } else {
-      alert(res.error);
-    }
-  };
-
-  const handleCreateYoutube = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setYoutubeLoading(true);
-    const res = await api.createYoutubeAd({ ...youtubeForm, budget: parseFloat(youtubeForm.budget) });
-    setYoutubeLoading(false);
-    if (!res.error) {
-      setYoutubeForm({ video_url: '', budget: '500' });
-      alert('YouTube-кампания создана и отправлена на модерацию!');
-    } else {
-      alert(res.error);
-    }
-  };
-
   const handlePayment = async () => {
     const res = await api.createPayment(parseFloat(payAmount));
     if (res.payment_url) window.open(res.payment_url, '_blank');
   };
 
-  const statusColor: Record<string, string> = {
-    pending: '#f59e0b',
-    active: '#10b981',
-    paused: '#6b7280',
-    rejected: '#ef4444',
-  };
-  const statusLabel: Record<string, string> = {
-    pending: 'На модерации',
-    active: 'Активен',
-    paused: 'Пауза',
-    rejected: 'Отклонён',
-  };
-
   return (
     <>
-    <div>
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Баланс', value: `${balance.toFixed(2)} ₽`, icon: 'Wallet', gold: true },
-            { label: 'Показов', value: stats.total_impressions?.toLocaleString() || '0', icon: 'Eye' },
-            { label: 'Кликов', value: stats.total_clicks?.toLocaleString() || '0', icon: 'MousePointer' },
-            { label: 'CTR', value: `${stats.ctr || 0}%`, icon: 'TrendingUp' },
-          ].map(s => (
-            <div key={s.label} className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-              <div className="flex items-center gap-2 mb-1">
-                <Icon name={s.icon as Parameters<typeof Icon>[0]['name']} size={16} style={{color: s.gold ? 'var(--gold)' : 'var(--text-muted)'}} />
-                <span className="text-xs" style={{color: 'var(--text-muted)'}}>{s.label}</span>
+      <div>
+        {/* Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {[
+              { label: 'Баланс', value: `${balance.toFixed(2)} ₽`, icon: 'Wallet', gold: true },
+              { label: 'Показов', value: stats.total_impressions?.toLocaleString() || '0', icon: 'Eye' },
+              { label: 'Кликов', value: stats.total_clicks?.toLocaleString() || '0', icon: 'MousePointer' },
+              { label: 'CTR', value: `${stats.ctr || 0}%`, icon: 'TrendingUp' },
+            ].map(s => (
+              <div key={s.label} className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon name={s.icon as Parameters<typeof Icon>[0]['name']} size={16} style={{color: s.gold ? 'var(--gold)' : 'var(--text-muted)'}} />
+                  <span className="text-xs" style={{color: 'var(--text-muted)'}}>{s.label}</span>
+                </div>
+                <div className="text-xl font-bold font-display" style={{color: s.gold ? 'var(--gold)' : 'var(--text-primary)'}}>{s.value}</div>
               </div>
-              <div className="text-xl font-bold font-display" style={{color: s.gold ? 'var(--gold)' : 'var(--text-primary)'}}>{s.value}</div>
+            ))}
+          </div>
+        )}
+
+        {/* Chart */}
+        {(() => {
+          const W = 600, H = 100, PAD = 10;
+          const hasData = daily.length >= 2;
+          const maxImp = hasData ? Math.max(...daily.map(d => d.impressions), 1) : 1;
+
+          const linePoints = (key: 'impressions' | 'clicks') => daily.map((d, i) => {
+            const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
+            const y = H - PAD - (d[key] / maxImp) * (H - PAD * 2);
+            return `${x},${y}`;
+          }).join(' ');
+
+          return (
+            <div className="mb-6 p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-sm">График за 14 дней</h3>
+                <div className="flex gap-4 text-xs" style={{color: 'var(--text-muted)'}}>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: 'var(--gold)'}} />Показы</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: '#60a5fa'}} />Клики</span>
+                </div>
+              </div>
+              {hasData ? (
+                <>
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{height: 100}}>
+                    <polyline fill="none" stroke="var(--gold)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={linePoints('impressions')} />
+                    <polyline fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={linePoints('clicks')} />
+                    {daily.map((d, i) => {
+                      const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
+                      const y = H - PAD - (d.impressions / maxImp) * (H - PAD * 2);
+                      return <circle key={i} cx={x} cy={y} r="3" fill="var(--gold)" />;
+                    })}
+                  </svg>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[0].date.slice(5)}</span>
+                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[daily.length - 1].date.slice(5)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-6 text-xs" style={{color: 'var(--text-muted)'}}>
+                  <Icon name="BarChart2" size={16} className="mr-2 opacity-40" />
+                  Данные накапливаются — график появится через несколько дней
+                </div>
+              )}
             </div>
+          );
+        })()}
+
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+          {([
+            { key: 'teasers', label: 'Тизерная реклама', icon: 'Image' },
+            { key: 'popup', label: 'POPUP реклама', icon: 'ExternalLink' },
+            { key: 'youtube', label: 'YouTube просмотры', icon: 'Play' },
+          ] as const).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-medium transition-all"
+              style={{
+                backgroundColor: activeTab === tab.key ? 'var(--gold)' : 'transparent',
+                color: activeTab === tab.key ? '#111318' : 'var(--text-muted)',
+              }}
+            >
+              <Icon name={tab.icon as Parameters<typeof Icon>[0]['name']} size={15} />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
           ))}
         </div>
-      )}
 
-      {/* Chart */}
-      {(() => {
-        const W = 600, H = 100, PAD = 10;
-        const hasData = daily.length >= 2;
-        const maxImp = hasData ? Math.max(...daily.map(d => d.impressions), 1) : 1;
+        {/* Actions */}
+        <div className="flex gap-3 mb-6 flex-wrap">
+          {activeTab === 'teasers' && (
+            <Button onClick={() => setShowCreateForm(!showCreateForm)} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+              <Icon name="Plus" size={16} className="mr-2" /> Создать тизер
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setShowPayment(!showPayment)} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
+            <Icon name="CreditCard" size={16} className="mr-2" /> Пополнить баланс
+          </Button>
+          <Button variant="outline" onClick={handleShowReferral} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
+            <Icon name="Users" size={16} className="mr-2" /> Реферальная программа
+          </Button>
+        </div>
 
-        const linePoints = (key: 'impressions' | 'clicks') => daily.map((d, i) => {
-          const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
-          const y = H - PAD - (d[key] / maxImp) * (H - PAD * 2);
-          return `${x},${y}`;
-        }).join(' ');
-
-        return (
-          <div className="mb-6 p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-sm">График за 14 дней</h3>
-              <div className="flex gap-4 text-xs" style={{color: 'var(--text-muted)'}}>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: 'var(--gold)'}} />Показы</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 inline-block rounded" style={{backgroundColor: '#60a5fa'}} />Клики</span>
-              </div>
-            </div>
-            {hasData ? (
+        {/* Referral block */}
+        {showReferral && (
+          <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+            <h3 className="font-bold mb-1">Реферальная программа</h3>
+            <p className="text-sm mb-4" style={{color: 'var(--text-muted)'}}>Приглашайте друзей — получайте <span style={{color: 'var(--gold)'}}>5%</span> с каждого их пополнения навсегда</p>
+            {refData ? (
               <>
-                <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{height: 100}}>
-                  <polyline fill="none" stroke="var(--gold)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={linePoints('impressions')} />
-                  <polyline fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={linePoints('clicks')} />
-                  {daily.map((d, i) => {
-                    const x = PAD + (i / (daily.length - 1)) * (W - PAD * 2);
-                    const y = H - PAD - (d.impressions / maxImp) * (H - PAD * 2);
-                    return <circle key={i} cx={x} cy={y} r="3" fill="var(--gold)" />;
-                  })}
-                </svg>
-                <div className="flex justify-between mt-1">
-                  <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[0].date.slice(5)}</span>
-                  <span className="text-xs" style={{color: 'var(--text-muted)'}}>{daily[daily.length - 1].date.slice(5)}</span>
+                <div className="flex gap-3 items-center mb-4">
+                  <div className="flex-1 px-3 py-2 rounded text-sm font-mono" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-primary)'}}>
+                    {`https://tizerpro.online/register?ref=${refData.ref_code}`}
+                  </div>
+                  <Button onClick={copyRefLink} style={{backgroundColor: 'var(--gold)', color: '#111318', minWidth: 90}}>
+                    <Icon name={refCopied ? 'Check' : 'Copy'} size={16} className="mr-2" />
+                    {refCopied ? 'Скопировано' : 'Копировать'}
+                  </Button>
+                </div>
+                <div className="flex gap-6">
+                  <div>
+                    <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Приглашено</div>
+                    <div className="text-xl font-bold font-display" style={{color: 'var(--text-primary)'}}>{refData.referrals_count}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Заработано</div>
+                    <div className="text-xl font-bold font-display" style={{color: 'var(--gold)'}}>{refData.total_earned.toFixed(2)} ₽</div>
+                  </div>
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center py-6 text-xs" style={{color: 'var(--text-muted)'}}>
-                <Icon name="BarChart2" size={16} className="mr-2 opacity-40" />
-                Данные накапливаются — график появится через несколько дней
-              </div>
+              <div className="text-sm" style={{color: 'var(--text-muted)'}}>Загрузка...</div>
             )}
           </div>
-        );
-      })()}
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-        {([
-          { key: 'teasers', label: 'Тизерная реклама', icon: 'Image' },
-          { key: 'popup', label: 'POPUP реклама', icon: 'ExternalLink' },
-          { key: 'youtube', label: 'YouTube просмотры', icon: 'Play' },
-        ] as const).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-medium transition-all"
-            style={{
-              backgroundColor: activeTab === tab.key ? 'var(--gold)' : 'transparent',
-              color: activeTab === tab.key ? '#111318' : 'var(--text-muted)',
-            }}
-          >
-            <Icon name={tab.icon as Parameters<typeof Icon>[0]['name']} size={15} />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3 mb-6 flex-wrap">
-        {activeTab === 'teasers' && (
-          <Button onClick={() => setShowCreateForm(!showCreateForm)} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-            <Icon name="Plus" size={16} className="mr-2" /> Создать тизер
-          </Button>
         )}
-        <Button variant="outline" onClick={() => setShowPayment(!showPayment)} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
-          <Icon name="CreditCard" size={16} className="mr-2" /> Пополнить баланс
-        </Button>
-        <Button variant="outline" onClick={handleShowReferral} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
-          <Icon name="Users" size={16} className="mr-2" /> Реферальная программа
-        </Button>
+
+        {/* Payment form */}
+        {showPayment && (
+          <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+            <h3 className="font-bold mb-4">Пополнение баланса через ЮМани</h3>
+            <div className="flex gap-3 items-end">
+              <div>
+                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Сумма (руб)</label>
+                <Input value={payAmount} onChange={e => setPayAmount(e.target.value)} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)', width: '160px'}} />
+              </div>
+              <Button onClick={handlePayment} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>Перейти к оплате</Button>
+            </div>
+            <p className="text-xs mt-2" style={{color: 'var(--text-muted)'}}>После оплаты баланс пополнится автоматически</p>
+          </div>
+        )}
+
+        {/* Tab content */}
+        {activeTab === 'teasers' && (
+          <TeaserTab
+            teasers={teasers}
+            showCreateForm={showCreateForm}
+            onHideCreateForm={() => setShowCreateForm(false)}
+            onCreated={loadData}
+            onEditTeaser={setEditTeaser}
+            onCreateTeaser={api.createTeaser}
+          />
+        )}
+        {activeTab === 'popup' && (
+          <PopupTab onCreatePopupAd={api.createPopupAd} />
+        )}
+        {activeTab === 'youtube' && (
+          <YoutubeTab onCreateYoutubeAd={api.createYoutubeAd} />
+        )}
       </div>
 
-      {/* Referral block */}
-      {showReferral && (
-        <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-          <h3 className="font-bold mb-1">Реферальная программа</h3>
-          <p className="text-sm mb-4" style={{color: 'var(--text-muted)'}}>Приглашайте друзей — получайте <span style={{color: 'var(--gold)'}}>5%</span> с каждого их пополнения навсегда</p>
-          {refData ? (
-            <>
-              <div className="flex gap-3 items-center mb-4">
-                <div className="flex-1 px-3 py-2 rounded text-sm font-mono" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-primary)'}}>
-                  {`https://tizerpro.online/register?ref=${refData.ref_code}`}
-                </div>
-                <Button onClick={copyRefLink} style={{backgroundColor: 'var(--gold)', color: '#111318', minWidth: 90}}>
-                  <Icon name={refCopied ? 'Check' : 'Copy'} size={16} className="mr-2" />
-                  {refCopied ? 'Скопировано' : 'Копировать'}
-                </Button>
-              </div>
-              <div className="flex gap-6">
-                <div>
-                  <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Приглашено</div>
-                  <div className="text-xl font-bold font-display" style={{color: 'var(--text-primary)'}}>{refData.referrals_count}</div>
-                </div>
-                <div>
-                  <div className="text-xs mb-1" style={{color: 'var(--text-muted)'}}>Заработано</div>
-                  <div className="text-xl font-bold font-display" style={{color: 'var(--gold)'}}>{refData.total_earned.toFixed(2)} ₽</div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-sm" style={{color: 'var(--text-muted)'}}>Загрузка...</div>
-          )}
-        </div>
-      )}
-
-      {/* Payment form */}
-      {showPayment && (
-        <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-          <h3 className="font-bold mb-4">Пополнение баланса через ЮМани</h3>
-          <div className="flex gap-3 items-end">
-            <div>
-              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Сумма (руб)</label>
-              <Input value={payAmount} onChange={e => setPayAmount(e.target.value)} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)', width: '160px'}} />
-            </div>
-            <Button onClick={handlePayment} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>Перейти к оплате</Button>
-          </div>
-          <p className="text-xs mt-2" style={{color: 'var(--text-muted)'}}>После оплаты баланс пополнится автоматически</p>
-        </div>
-      )}
-
-      {/* Create teaser form */}
-      {showCreateForm && (
-        <div className="mb-6 p-6 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--gold)'}}>
-          <h3 className="font-bold mb-4">Новый тизер</h3>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Заголовок *</label>
-                <Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Заголовок тизера" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка *</label>
-                <Input value={form.url} onChange={e => setForm({...form, url: e.target.value})} placeholder="https://ваш-сайт.ru" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Описание</label>
-                <Input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Короткое описание" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Картинка</label>
-                <label className="flex flex-col items-center justify-center w-full h-24 rounded-lg cursor-pointer border-2 border-dashed transition-colors overflow-hidden relative" style={{borderColor: 'var(--line)', backgroundColor: 'var(--charcoal)'}}>
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                  ) : imageUploading ? (
-                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>Загрузка...</span>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1">
-                      <Icon name="Upload" size={20} style={{color: 'var(--text-muted)'}} />
-                      <span className="text-xs" style={{color: 'var(--text-muted)'}}>Нажмите для загрузки</span>
-                    </div>
-                  )}
-                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
-                </label>
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
-                <Input value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} type="number" min="0" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>CPM (руб за 1000 показов)</label>
-                <Input value={form.cpm} onChange={e => setForm({...form, cpm: e.target.value})} type="number" min="50" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button type="submit" disabled={loading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-                {loading ? 'Создаём...' : 'Создать тизер'}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => { setShowCreateForm(false); setImagePreview(''); }} style={{color: 'var(--text-muted)'}}>Отмена</Button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Teasers tab */}
-      {activeTab === 'teasers' && (
-        <>
-          <h2 className="text-xl font-bold font-display mb-4">Мои тизеры</h2>
-          {teasers.length === 0 ? (
-            <div className="text-center py-12" style={{color: 'var(--text-muted)'}}>
-              <Icon name="Image" size={40} className="mx-auto mb-3 opacity-30" />
-              <p>Тизеров пока нет. Создайте первый!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {teasers.map(t => (
-                <div key={t.id} className="p-4 rounded-lg flex gap-4 items-start" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-                  {t.image_url && <img src={t.image_url} alt="" className="w-16 h-16 object-cover rounded flex-shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-bold">{t.title}</span>
-                      <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor: statusColor[t.status] + '22', color: statusColor[t.status]}}>
-                        {statusLabel[t.status] || t.status}
-                      </span>
-                    </div>
-                    <p className="text-sm mb-2 truncate" style={{color: 'var(--text-muted)'}}>{t.url}</p>
-                    <div className="flex flex-wrap gap-4 text-sm" style={{color: 'var(--text-muted)'}}>
-                      <span>Бюджет: <b style={{color: 'var(--text-primary)'}}>{t.budget.toFixed(2)} ₽</b></span>
-                      <span>Потрачено: <b style={{color: 'var(--text-primary)'}}>{t.spent.toFixed(2)} ₽</b></span>
-                      <span>Показов: <b style={{color: 'var(--text-primary)'}}>{t.impressions}</b></span>
-                      <span>Кликов: <b style={{color: 'var(--text-primary)'}}>{t.clicks}</b></span>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={() => openEditTeaser(t)} style={{borderColor: 'var(--line)', color: 'var(--text-muted)', flexShrink: 0}}>
-                    <Icon name="Pencil" size={14} className="mr-1" />
-                    Изменить
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* POPUP tab */}
-      {activeTab === 'popup' && (
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <Icon name="ExternalLink" size={22} style={{color: 'var(--gold)'}} />
-            <div>
-              <h2 className="text-xl font-bold font-display">POPUP реклама</h2>
-              <p className="text-sm" style={{color: 'var(--text-muted)'}}>Гарантированные переходы на ваш сайт — 50 ₽ за 1000 переходов</p>
-            </div>
-          </div>
-          <div className="p-6 rounded-lg mb-6" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--gold)'}}>
-            <h3 className="font-bold mb-4">Создать POPUP-кампанию</h3>
-            <form onSubmit={handleCreatePopup} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Заголовок объявления *</label>
-                  <Input value={popupForm.title} onChange={e => setPopupForm({...popupForm, title: e.target.value})} placeholder="Заголовок для POPUP" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка для перехода *</label>
-                  <Input value={popupForm.url} onChange={e => setPopupForm({...popupForm, url: e.target.value})} placeholder="https://ваш-сайт.ru" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
-                  <Input value={popupForm.budget} onChange={e => setPopupForm({...popupForm, budget: e.target.value})} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-                  <p className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Минимум 100 ₽ · {Math.floor(parseFloat(popupForm.budget || '0') / 50 * 1000).toLocaleString()} переходов</p>
-                </div>
-              </div>
-              <Button type="submit" disabled={popupLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-                <Icon name="Plus" size={16} className="mr-2" />
-                {popupLoading ? 'Создаём...' : 'Создать POPUP-кампанию'}
-              </Button>
-            </form>
-          </div>
-          <div className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-            <h4 className="font-semibold mb-2 text-sm">Как работает POPUP реклама?</h4>
-            <ul className="space-y-2 text-sm" style={{color: 'var(--text-muted)'}}>
-              {['Ваше объявление показывается пользователям нашей сети в виде всплывающего окна', 'При клике пользователь переходит на ваш сайт — это гарантированный переход', 'Списание происходит только за реальные переходы по 50 ₽ за 1000'].map(t => (
-                <li key={t} className="flex items-start gap-2">
-                  <Icon name="Check" size={14} style={{color: 'var(--gold)', flexShrink: 0, marginTop: 2}} />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* YouTube tab */}
-      {activeTab === 'youtube' && (
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <Icon name="Play" size={22} style={{color: '#ff0000'}} />
-            <div>
-              <h2 className="text-xl font-bold font-display">YouTube просмотры</h2>
-              <p className="text-sm" style={{color: 'var(--text-muted)'}}>Добавьте своё видео — его посмотрят тысячи пользователей · 70 ₽ за 1000 просмотров</p>
-            </div>
-          </div>
-          <div className="p-6 rounded-lg mb-6" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--gold)'}}>
-            <h3 className="font-bold mb-4">Создать YouTube-кампанию</h3>
-            <form onSubmit={handleCreateYoutube} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка на YouTube видео *</label>
-                  <Input value={youtubeForm.video_url} onChange={e => setYoutubeForm({...youtubeForm, video_url: e.target.value})} placeholder="https://youtube.com/watch?v=..." required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-                </div>
-                <div>
-                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
-                  <Input value={youtubeForm.budget} onChange={e => setYoutubeForm({...youtubeForm, budget: e.target.value})} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-                  <p className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Минимум 100 ₽ · {Math.floor(parseFloat(youtubeForm.budget || '0') / 70 * 1000).toLocaleString()} просмотров</p>
-                </div>
-              </div>
-              <Button type="submit" disabled={youtubeLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-                <Icon name="Play" size={16} className="mr-2" />
-                {youtubeLoading ? 'Создаём...' : 'Запустить YouTube-кампанию'}
-              </Button>
-            </form>
-          </div>
-          <div className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-            <h4 className="font-semibold mb-2 text-sm">Как работают YouTube просмотры?</h4>
-            <ul className="space-y-2 text-sm" style={{color: 'var(--text-muted)'}}>
-              {['Укажите ссылку на ваше видео — наши пользователи откроют и посмотрят его', 'Просмотры от живых людей — реальные потенциальные клиенты', 'Списание по 70 ₽ за каждую 1000 просмотров'].map(t => (
-                <li key={t} className="flex items-start gap-2">
-                  <Icon name="Check" size={14} style={{color: 'var(--gold)', flexShrink: 0, marginTop: 2}} />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
-
-    {/* Edit teaser modal */}
-    { }
-    {editTeaser && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor: 'rgba(0,0,0,0.7)'}}>
-        <div className="w-full max-w-lg rounded-xl p-6" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)'}}>
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-lg font-display">Редактировать тизер</h3>
-            <button onClick={() => setEditTeaser(null)} style={{color: 'var(--text-muted)'}}>
-              <Icon name="X" size={20} />
-            </button>
-          </div>
-          <form onSubmit={handleEditSave} className="space-y-4">
-            <div>
-              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Заголовок *</label>
-              <Input value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} required style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка *</label>
-              <Input value={editForm.url} onChange={e => setEditForm({...editForm, url: e.target.value})} placeholder="https://ваш-сайт.ru" required style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Описание</label>
-              <Input value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Картинка</label>
-              <label className="flex flex-col items-center justify-center w-full h-24 rounded-lg cursor-pointer border-2 border-dashed overflow-hidden relative" style={{borderColor: 'var(--line)', backgroundColor: 'var(--charcoal-mid)'}}>
-                {editImagePreview ? (
-                  <img src={editImagePreview} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <Icon name="Upload" size={20} style={{color: 'var(--text-muted)'}} />
-                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>Нажмите для замены</span>
-                  </div>
-                )}
-                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleEditImageUpload} />
-              </label>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={editLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-                {editLoading ? 'Сохраняем...' : 'Сохранить'}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setEditTeaser(null)} style={{color: 'var(--text-muted)'}}>
-                Отмена
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
+      <EditTeaserModal
+        teaser={editTeaser}
+        onClose={() => setEditTeaser(null)}
+        onSave={api.updateTeaser}
+        onSaved={loadData}
+      />
     </>
   );
 }
