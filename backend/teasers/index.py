@@ -151,7 +151,7 @@ def handler(event: dict, context) -> dict:
             db.close()
             return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Реклама отклонена: запрещённый контент по законодательству РФ'})}
 
-        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 50, 'pending', 'popup') RETURNING id",
+        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 50, 'active', 'popup') RETURNING id",
                     (user_id, title, url, budget))
         ad_id = cur.fetchone()[0]
 
@@ -181,7 +181,7 @@ def handler(event: dict, context) -> dict:
             db.close()
             return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Недостаточно средств на балансе'})}
 
-        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 70, 'pending', 'youtube') RETURNING id",
+        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 70, 'active', 'youtube') RETURNING id",
                     (user_id, 'YouTube просмотры', video_url, budget))
         ad_id = cur.fetchone()[0]
 
