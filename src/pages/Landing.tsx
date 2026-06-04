@@ -240,6 +240,34 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* POPUP & YouTube banners */}
+      <section className="py-10 px-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="relative rounded-2xl overflow-hidden cursor-pointer group" style={{ border: '1px solid var(--line)' }} onClick={() => navigate('/register?role=advertiser')}>
+            <img src="https://cdn.poehali.dev/projects/02e31793-b8ad-4be8-8513-9796d55c4640/files/024d4681-0543-46ae-83e6-f6319ca47ef0.jpg" alt="POPUP реклама" className="w-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ height: 220 }} />
+            <div className="absolute inset-0 flex flex-col justify-end p-5" style={{ background: 'linear-gradient(to top, rgba(15,10,5,0.92) 40%, rgba(15,10,5,0.2) 100%)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <Icon name="ExternalLink" size={16} style={{ color: 'var(--gold)' }} />
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--gold)' }}>POPUP реклама</span>
+              </div>
+              <div className="text-lg font-bold font-display" style={{ color: 'var(--text-primary)' }}>Гарантированные переходы</div>
+              <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>50 ₽ за 1000 переходов на ваш сайт</div>
+            </div>
+          </div>
+          <div className="relative rounded-2xl overflow-hidden cursor-pointer group" style={{ border: '1px solid var(--line)' }} onClick={() => navigate('/register?role=advertiser')}>
+            <img src="https://cdn.poehali.dev/projects/02e31793-b8ad-4be8-8513-9796d55c4640/files/60dc6715-0bf5-4169-8cf1-dbc6f35a3648.jpg" alt="YouTube просмотры" className="w-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ height: 220 }} />
+            <div className="absolute inset-0 flex flex-col justify-end p-5" style={{ background: 'linear-gradient(to top, rgba(15,10,5,0.92) 40%, rgba(15,10,5,0.2) 100%)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <Icon name="Play" size={16} style={{ color: '#ff0000' }} />
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--gold)' }}>YouTube просмотры</span>
+              </div>
+              <div className="text-lg font-bold font-display" style={{ color: 'var(--text-primary)' }}>Тысячи реальных просмотров</div>
+              <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>70 ₽ за 1000 просмотров вашего видео</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="py-16 px-6">
         <div className="max-w-2xl mx-auto">
