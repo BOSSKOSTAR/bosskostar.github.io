@@ -25,11 +25,16 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [teasers, setTeasers] = useState<Teaser[]>([]);
   const [stats, setStats] = useState<Record<string, number> | null>(null);
   const [daily, setDaily] = useState<DayStats[]>([]);
+  const [activeTab, setActiveTab] = useState<'teasers' | 'popup' | 'youtube'>('teasers');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [payAmount, setPayAmount] = useState('500');
   const [form, setForm] = useState({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
+  const [popupForm, setPopupForm] = useState({ title: '', url: '', budget: '500' });
+  const [youtubeForm, setYoutubeForm] = useState({ video_url: '', budget: '500' });
   const [loading, setLoading] = useState(false);
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [imageUploading, setImageUploading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
@@ -102,6 +107,32 @@ export default function AdvertiserDashboard({ user }: Props) {
       setForm({ title: '', description: '', url: '', image_url: '', budget: '500', cpm: '50' });
       setImagePreview('');
       loadData();
+    } else {
+      alert(res.error);
+    }
+  };
+
+  const handleCreatePopup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPopupLoading(true);
+    const res = await api.createPopupAd({ ...popupForm, budget: parseFloat(popupForm.budget) });
+    setPopupLoading(false);
+    if (!res.error) {
+      setPopupForm({ title: '', url: '', budget: '500' });
+      alert('POPUP-кампания создана и отправлена на модерацию!');
+    } else {
+      alert(res.error);
+    }
+  };
+
+  const handleCreateYoutube = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setYoutubeLoading(true);
+    const res = await api.createYoutubeAd({ ...youtubeForm, budget: parseFloat(youtubeForm.budget) });
+    setYoutubeLoading(false);
+    if (!res.error) {
+      setYoutubeForm({ video_url: '', budget: '500' });
+      alert('YouTube-кампания создана и отправлена на модерацию!');
     } else {
       alert(res.error);
     }
@@ -194,11 +225,35 @@ export default function AdvertiserDashboard({ user }: Props) {
         );
       })()}
 
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+        {([
+          { key: 'teasers', label: 'Тизерная реклама', icon: 'Image' },
+          { key: 'popup', label: 'POPUP реклама', icon: 'ExternalLink' },
+          { key: 'youtube', label: 'YouTube просмотры', icon: 'Play' },
+        ] as const).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-medium transition-all"
+            style={{
+              backgroundColor: activeTab === tab.key ? 'var(--gold)' : 'transparent',
+              color: activeTab === tab.key ? '#111318' : 'var(--text-muted)',
+            }}
+          >
+            <Icon name={tab.icon as Parameters<typeof Icon>[0]['name']} size={15} />
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Actions */}
       <div className="flex gap-3 mb-6 flex-wrap">
-        <Button onClick={() => setShowCreateForm(!showCreateForm)} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
-          <Icon name="Plus" size={16} className="mr-2" /> Создать тизер
-        </Button>
+        {activeTab === 'teasers' && (
+          <Button onClick={() => setShowCreateForm(!showCreateForm)} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+            <Icon name="Plus" size={16} className="mr-2" /> Создать тизер
+          </Button>
+        )}
         <Button variant="outline" onClick={() => setShowPayment(!showPayment)} style={{borderColor: 'var(--line)', color: 'var(--text-primary)'}}>
           <Icon name="CreditCard" size={16} className="mr-2" /> Пополнить баланс
         </Button>
@@ -308,35 +363,131 @@ export default function AdvertiserDashboard({ user }: Props) {
         </div>
       )}
 
-      {/* Teasers list */}
-      <h2 className="text-xl font-bold font-display mb-4">Мои тизеры</h2>
-      {teasers.length === 0 ? (
-        <div className="text-center py-12" style={{color: 'var(--text-muted)'}}>
-          <Icon name="Image" size={40} className="mx-auto mb-3 opacity-30" />
-          <p>Тизеров пока нет. Создайте первый!</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {teasers.map(t => (
-            <div key={t.id} className="p-4 rounded-lg flex gap-4 items-start" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-              {t.image_url && <img src={t.image_url} alt="" className="w-16 h-16 object-cover rounded" />}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold">{t.title}</span>
-                  <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor: statusColor[t.status] + '22', color: statusColor[t.status]}}>
-                    {statusLabel[t.status] || t.status}
-                  </span>
+      {/* Teasers tab */}
+      {activeTab === 'teasers' && (
+        <>
+          <h2 className="text-xl font-bold font-display mb-4">Мои тизеры</h2>
+          {teasers.length === 0 ? (
+            <div className="text-center py-12" style={{color: 'var(--text-muted)'}}>
+              <Icon name="Image" size={40} className="mx-auto mb-3 opacity-30" />
+              <p>Тизеров пока нет. Создайте первый!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {teasers.map(t => (
+                <div key={t.id} className="p-4 rounded-lg flex gap-4 items-start" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+                  {t.image_url && <img src={t.image_url} alt="" className="w-16 h-16 object-cover rounded" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold">{t.title}</span>
+                      <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor: statusColor[t.status] + '22', color: statusColor[t.status]}}>
+                        {statusLabel[t.status] || t.status}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-2 truncate" style={{color: 'var(--text-muted)'}}>{t.url}</p>
+                    <div className="flex gap-4 text-sm" style={{color: 'var(--text-muted)'}}>
+                      <span>Бюджет: <b style={{color: 'var(--text-primary)'}}>{t.budget.toFixed(2)} ₽</b></span>
+                      <span>Потрачено: <b style={{color: 'var(--text-primary)'}}>{t.spent.toFixed(2)} ₽</b></span>
+                      <span>Показов: <b style={{color: 'var(--text-primary)'}}>{t.impressions}</b></span>
+                      <span>Кликов: <b style={{color: 'var(--text-primary)'}}>{t.clicks}</b></span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm mb-2 truncate" style={{color: 'var(--text-muted)'}}>{t.url}</p>
-                <div className="flex gap-4 text-sm" style={{color: 'var(--text-muted)'}}>
-                  <span>Бюджет: <b style={{color: 'var(--text-primary)'}}>{t.budget.toFixed(2)} ₽</b></span>
-                  <span>Потрачено: <b style={{color: 'var(--text-primary)'}}>{t.spent.toFixed(2)} ₽</b></span>
-                  <span>Показов: <b style={{color: 'var(--text-primary)'}}>{t.impressions}</b></span>
-                  <span>Кликов: <b style={{color: 'var(--text-primary)'}}>{t.clicks}</b></span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* POPUP tab */}
+      {activeTab === 'popup' && (
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <Icon name="ExternalLink" size={22} style={{color: 'var(--gold)'}} />
+            <div>
+              <h2 className="text-xl font-bold font-display">POPUP реклама</h2>
+              <p className="text-sm" style={{color: 'var(--text-muted)'}}>Гарантированные переходы на ваш сайт — 50 ₽ за 1000 переходов</p>
+            </div>
+          </div>
+          <div className="p-6 rounded-lg mb-6" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--gold)'}}>
+            <h3 className="font-bold mb-4">Создать POPUP-кампанию</h3>
+            <form onSubmit={handleCreatePopup} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Заголовок объявления *</label>
+                  <Input value={popupForm.title} onChange={e => setPopupForm({...popupForm, title: e.target.value})} placeholder="Заголовок для POPUP" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка для перехода *</label>
+                  <Input value={popupForm.url} onChange={e => setPopupForm({...popupForm, url: e.target.value})} placeholder="https://ваш-сайт.ru" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
+                  <Input value={popupForm.budget} onChange={e => setPopupForm({...popupForm, budget: e.target.value})} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                  <p className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Минимум 100 ₽ · {Math.floor(parseFloat(popupForm.budget || '0') / 50 * 1000).toLocaleString()} переходов</p>
                 </div>
               </div>
+              <Button type="submit" disabled={popupLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+                <Icon name="Plus" size={16} className="mr-2" />
+                {popupLoading ? 'Создаём...' : 'Создать POPUP-кампанию'}
+              </Button>
+            </form>
+          </div>
+          <div className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+            <h4 className="font-semibold mb-2 text-sm">Как работает POPUP реклама?</h4>
+            <ul className="space-y-2 text-sm" style={{color: 'var(--text-muted)'}}>
+              {['Ваше объявление показывается пользователям нашей сети в виде всплывающего окна', 'При клике пользователь переходит на ваш сайт — это гарантированный переход', 'Списание происходит только за реальные переходы по 50 ₽ за 1000'].map(t => (
+                <li key={t} className="flex items-start gap-2">
+                  <Icon name="Check" size={14} style={{color: 'var(--gold)', flexShrink: 0, marginTop: 2}} />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* YouTube tab */}
+      {activeTab === 'youtube' && (
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <Icon name="Play" size={22} style={{color: '#ff0000'}} />
+            <div>
+              <h2 className="text-xl font-bold font-display">YouTube просмотры</h2>
+              <p className="text-sm" style={{color: 'var(--text-muted)'}}>Добавьте своё видео — его посмотрят тысячи пользователей · 70 ₽ за 1000 просмотров</p>
             </div>
-          ))}
+          </div>
+          <div className="p-6 rounded-lg mb-6" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--gold)'}}>
+            <h3 className="font-bold mb-4">Создать YouTube-кампанию</h3>
+            <form onSubmit={handleCreateYoutube} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка на YouTube видео *</label>
+                  <Input value={youtubeForm.video_url} onChange={e => setYoutubeForm({...youtubeForm, video_url: e.target.value})} placeholder="https://youtube.com/watch?v=..." required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Бюджет (руб)</label>
+                  <Input value={youtubeForm.budget} onChange={e => setYoutubeForm({...youtubeForm, budget: e.target.value})} type="number" min="100" style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+                  <p className="text-xs mt-1" style={{color: 'var(--text-muted)'}}>Минимум 100 ₽ · {Math.floor(parseFloat(youtubeForm.budget || '0') / 70 * 1000).toLocaleString()} просмотров</p>
+                </div>
+              </div>
+              <Button type="submit" disabled={youtubeLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+                <Icon name="Play" size={16} className="mr-2" />
+                {youtubeLoading ? 'Создаём...' : 'Запустить YouTube-кампанию'}
+              </Button>
+            </form>
+          </div>
+          <div className="p-4 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
+            <h4 className="font-semibold mb-2 text-sm">Как работают YouTube просмотры?</h4>
+            <ul className="space-y-2 text-sm" style={{color: 'var(--text-muted)'}}>
+              {['Укажите ссылку на ваше видео — наши пользователи откроют и посмотрят его', 'Просмотры от живых людей — реальные потенциальные клиенты', 'Списание по 70 ₽ за каждую 1000 просмотров'].map(t => (
+                <li key={t} className="flex items-start gap-2">
+                  <Icon name="Check" size={14} style={{color: 'var(--gold)', flexShrink: 0, marginTop: 2}} />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>

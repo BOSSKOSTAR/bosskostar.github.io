@@ -32,6 +32,8 @@ export const api = {
   getTeasers: () => request(URLS.teasers, 'POST', { action: 'list' }),
   createTeaser: (data: object) => request(URLS.teasers, 'POST', { action: 'create', ...data }),
   updateTeaserStatus: (id: number, status: string) => request(URLS.teasers, 'POST', { action: 'update', id, status }),
+  createPopupAd: (data: object) => request(URLS.teasers, 'POST', { action: 'create_popup', ...data }),
+  createYoutubeAd: (data: object) => request(URLS.teasers, 'POST', { action: 'create_youtube', ...data }),
 
   getSites: () => request(URLS.sites, 'POST', { action: 'list' }),
   createSite: (data: object) => request(URLS.sites, 'POST', { action: 'create', ...data }),

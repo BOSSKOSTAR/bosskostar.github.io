@@ -1,0 +1,1 @@
+ALTER TABLE t_p48437139_create_project_4.teasers ADD COLUMN IF NOT EXISTS ad_type VARCHAR(20) DEFAULT 'teaser';

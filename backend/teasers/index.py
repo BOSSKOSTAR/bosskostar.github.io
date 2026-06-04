@@ -132,6 +132,68 @@ def handler(event: dict, context) -> dict:
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': teaser_id, 'status': 'active'})}
 
+    # Создать POPUP-кампанию
+    if action == 'create_popup':
+        title = body.get('title', '').strip()
+        url = body.get('url', '').strip()
+        budget = float(body.get('budget', 0))
+
+        if not title or not url:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Заполните заголовок и ссылку'})}
+
+        if budget > float(user_balance):
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Недостаточно средств на балансе'})}
+
+        banned_kw = check_content(f"{title} {url}")
+        if banned_kw:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Реклама отклонена: запрещённый контент по законодательству РФ'})}
+
+        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 50, 'pending', 'popup') RETURNING id",
+                    (user_id, title, url, budget))
+        ad_id = cur.fetchone()[0]
+
+        if budget > 0:
+            cur.execute(f"UPDATE {SCHEMA}.users SET balance = balance - %s WHERE id = %s", (budget, user_id))
+            cur.execute(f"INSERT INTO {SCHEMA}.transactions (user_id, amount, type, description) VALUES (%s, %s, 'spend', %s)",
+                        (user_id, -budget, f'Бюджет POPUP-кампании #{ad_id}'))
+
+        db.commit()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': ad_id, 'status': 'pending'})}
+
+    # Создать YouTube-кампанию
+    if action == 'create_youtube':
+        video_url = body.get('video_url', '').strip()
+        budget = float(body.get('budget', 0))
+
+        if not video_url:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Укажите ссылку на YouTube видео'})}
+
+        if 'youtube.com' not in video_url and 'youtu.be' not in video_url:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Ссылка должна быть на YouTube видео'})}
+
+        if budget > float(user_balance):
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Недостаточно средств на балансе'})}
+
+        cur.execute(f"INSERT INTO {SCHEMA}.teasers (user_id, title, url, budget, cpm, status, ad_type) VALUES (%s, %s, %s, %s, 70, 'pending', 'youtube') RETURNING id",
+                    (user_id, 'YouTube просмотры', video_url, budget))
+        ad_id = cur.fetchone()[0]
+
+        if budget > 0:
+            cur.execute(f"UPDATE {SCHEMA}.users SET balance = balance - %s WHERE id = %s", (budget, user_id))
+            cur.execute(f"INSERT INTO {SCHEMA}.transactions (user_id, amount, type, description) VALUES (%s, %s, 'spend', %s)",
+                        (user_id, -budget, f'Бюджет YouTube-кампании #{ad_id}'))
+
+        db.commit()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': ad_id, 'status': 'pending'})}
+
     # Обновить статус (admin)
     if action == 'update' and user_role == 'admin':
         teaser_id = body.get('id')
