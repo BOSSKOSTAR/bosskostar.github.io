@@ -94,6 +94,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Promo Banner */}
+      <section className="px-6 pb-10 max-w-5xl mx-auto">
+        <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid var(--line)' }}>
+          <img
+            src="https://cdn.poehali.dev/projects/02e31793-b8ad-4be8-8513-9796d55c4640/files/fefa15cc-ea67-40b1-8227-e24b102f4cbf.jpg"
+            alt="TizerPro — рекламная сеть"
+            className="w-full object-cover"
+            style={{ maxHeight: 340 }}
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6"
+            style={{ background: 'linear-gradient(to top, rgba(15,10,5,0.85) 30%, rgba(15,10,5,0.3) 100%)' }}>
+            <div className="text-2xl md:text-4xl font-bold font-display mb-3" style={{ color: 'var(--text-primary)' }}>
+              Запустите рекламу <span style={{ color: 'var(--gold)' }}>за 2 минуты</span>
+            </div>
+            <p className="mb-5 text-base md:text-lg" style={{ color: 'var(--text-muted)' }}>Тизеры · POPUP · YouTube просмотры</p>
+            <Button onClick={() => navigate('/register?role=advertiser')} style={{ backgroundColor: 'var(--gold)', color: '#111318', fontSize: '1rem', padding: '0 2rem', height: '3rem' }}>
+              <Icon name="Zap" size={18} className="mr-2" />
+              Начать бесплатно
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="py-16 px-6" style={{ backgroundColor: 'var(--charcoal-mid)' }}>
         <div className="max-w-5xl mx-auto">
