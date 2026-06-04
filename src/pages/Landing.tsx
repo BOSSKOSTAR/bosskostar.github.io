@@ -135,12 +135,12 @@ export default function Landing() {
 
       {/* Pricing */}
       <section className="py-16 px-6" style={{ backgroundColor: 'var(--charcoal-mid)' }}>
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl font-bold font-display mb-4">Прозрачные цены</h2>
           <p className="mb-10" style={{ color: 'var(--text-muted)' }}>Никаких скрытых комиссий и абонентской платы</p>
-          <div className="flex justify-center">
-            <div className="p-8 rounded-xl max-w-sm w-full" style={{ backgroundColor: 'var(--charcoal)', border: '2px solid var(--gold)' }}>
-              <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--gold)' }}>Рекламодатель</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="p-8 rounded-xl" style={{ backgroundColor: 'var(--charcoal)', border: '2px solid var(--gold)' }}>
+              <div className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--gold)' }}>Тизерная реклама</div>
               <div className="text-5xl font-bold font-display my-4" style={{ color: 'var(--gold)' }}>50 ₽</div>
               <p className="mb-6" style={{ color: 'var(--text-muted)' }}>за 1000 показов (CPM)</p>
               <ul className="space-y-3 text-left text-sm mb-8">
@@ -149,6 +149,58 @@ export default function Landing() {
                   'Мгновенная активация тизера',
                   'Статистика показов и кликов',
                   'Оплата через ЮМани',
+                  'Остановка в любой момент',
+                ].map(item => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Icon name="Check" size={15} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-muted)' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full" onClick={() => navigate('/register?role=advertiser')} style={{ backgroundColor: 'var(--gold)', color: '#111318', height: '2.75rem' }}>
+                Начать бесплатно
+              </Button>
+            </div>
+
+            <div className="p-8 rounded-xl" style={{ backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)' }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Icon name="ExternalLink" size={20} style={{ color: 'var(--gold)' }} />
+                <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--gold)' }}>POPUP реклама</div>
+              </div>
+              <div className="text-5xl font-bold font-display my-4" style={{ color: 'var(--gold)' }}>50 ₽</div>
+              <p className="mb-6" style={{ color: 'var(--text-muted)' }}>за 1000 переходов</p>
+              <ul className="space-y-3 text-left text-sm mb-8">
+                {[
+                  'Гарантированные переходы',
+                  'Реальные пользователи сети',
+                  'Высокая видимость объявления',
+                  'Статистика в реальном времени',
+                  'Остановка в любой момент',
+                ].map(item => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Icon name="Check" size={15} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-muted)' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full" onClick={() => navigate('/register?role=advertiser')} style={{ backgroundColor: 'var(--gold)', color: '#111318', height: '2.75rem' }}>
+                Начать бесплатно
+              </Button>
+            </div>
+
+            <div className="p-8 rounded-xl" style={{ backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)' }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Icon name="Play" size={20} style={{ color: '#ff0000' }} />
+                <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--gold)' }}>YouTube просмотры</div>
+              </div>
+              <div className="text-5xl font-bold font-display my-4" style={{ color: 'var(--gold)' }}>70 ₽</div>
+              <p className="mb-6" style={{ color: 'var(--text-muted)' }}>от 70 руб. за 1000 просмотров</p>
+              <ul className="space-y-3 text-left text-sm mb-8">
+                {[
+                  'Просмотры от живых пользователей',
+                  'Добавьте ссылку на видео',
+                  'Тысячи потенциальных клиентов',
+                  'Статистика просмотров',
                   'Остановка в любой момент',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2">
