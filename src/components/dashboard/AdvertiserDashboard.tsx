@@ -38,6 +38,10 @@ export default function AdvertiserDashboard({ user }: Props) {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [imageUploading, setImageUploading] = useState(false);
   const [balance, setBalance] = useState(user.balance);
+  const [editTeaser, setEditTeaser] = useState<Teaser | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', description: '', url: '', image_url: '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editImagePreview, setEditImagePreview] = useState('');
   const [showReferral, setShowReferral] = useState(false);
   const [refData, setRefData] = useState<{ref_code: string; referrals_count: number; total_earned: number} | null>(null);
   const [refCopied, setRefCopied] = useState(false);
@@ -95,6 +99,46 @@ export default function AdvertiserDashboard({ user }: Props) {
       setImageUploading(false);
     };
     reader.readAsDataURL(file);
+  };
+
+  const openEditTeaser = (t: Teaser) => {
+    setEditTeaser(t);
+    setEditForm({ title: t.title, description: t.description || '', url: t.url, image_url: t.image_url || '' });
+    setEditImagePreview(t.image_url || '');
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const b64 = (ev.target?.result as string).split(',')[1];
+      const res = await fetch('https://functions.poehali.dev/6b199405-f08d-42ce-9abc-e36ebb9f2c9f', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, content_type: file.type }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        setEditForm(f => ({ ...f, image_url: data.url }));
+        setEditImagePreview(data.url);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTeaser) return;
+    setEditLoading(true);
+    const res = await api.updateTeaser({ id: editTeaser.id, ...editForm });
+    setEditLoading(false);
+    if (!res.error) {
+      setEditTeaser(null);
+      loadData();
+    } else {
+      alert(res.error);
+    }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -157,6 +201,7 @@ export default function AdvertiserDashboard({ user }: Props) {
   };
 
   return (
+    <>
     <div>
       {/* Stats */}
       {stats && (
@@ -376,22 +421,26 @@ export default function AdvertiserDashboard({ user }: Props) {
             <div className="space-y-3">
               {teasers.map(t => (
                 <div key={t.id} className="p-4 rounded-lg flex gap-4 items-start" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-                  {t.image_url && <img src={t.image_url} alt="" className="w-16 h-16 object-cover rounded" />}
+                  {t.image_url && <img src={t.image_url} alt="" className="w-16 h-16 object-cover rounded flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-bold">{t.title}</span>
                       <span className="text-xs px-2 py-0.5 rounded" style={{backgroundColor: statusColor[t.status] + '22', color: statusColor[t.status]}}>
                         {statusLabel[t.status] || t.status}
                       </span>
                     </div>
                     <p className="text-sm mb-2 truncate" style={{color: 'var(--text-muted)'}}>{t.url}</p>
-                    <div className="flex gap-4 text-sm" style={{color: 'var(--text-muted)'}}>
+                    <div className="flex flex-wrap gap-4 text-sm" style={{color: 'var(--text-muted)'}}>
                       <span>Бюджет: <b style={{color: 'var(--text-primary)'}}>{t.budget.toFixed(2)} ₽</b></span>
                       <span>Потрачено: <b style={{color: 'var(--text-primary)'}}>{t.spent.toFixed(2)} ₽</b></span>
                       <span>Показов: <b style={{color: 'var(--text-primary)'}}>{t.impressions}</b></span>
                       <span>Кликов: <b style={{color: 'var(--text-primary)'}}>{t.clicks}</b></span>
                     </div>
                   </div>
+                  <Button size="sm" variant="outline" onClick={() => openEditTeaser(t)} style={{borderColor: 'var(--line)', color: 'var(--text-muted)', flexShrink: 0}}>
+                    <Icon name="Pencil" size={14} className="mr-1" />
+                    Изменить
+                  </Button>
                 </div>
               ))}
             </div>
@@ -491,5 +540,57 @@ export default function AdvertiserDashboard({ user }: Props) {
         </div>
       )}
     </div>
+
+    {/* Edit teaser modal */}
+    { }
+    {editTeaser && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backgroundColor: 'rgba(0,0,0,0.7)'}}>
+        <div className="w-full max-w-lg rounded-xl p-6" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)'}}>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-bold text-lg font-display">Редактировать тизер</h3>
+            <button onClick={() => setEditTeaser(null)} style={{color: 'var(--text-muted)'}}>
+              <Icon name="X" size={20} />
+            </button>
+          </div>
+          <form onSubmit={handleEditSave} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Заголовок *</label>
+              <Input value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} required style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Ссылка *</label>
+              <Input value={editForm.url} onChange={e => setEditForm({...editForm, url: e.target.value})} placeholder="https://ваш-сайт.ru" required style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Описание</label>
+              <Input value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} style={{backgroundColor: 'var(--charcoal-mid)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Картинка</label>
+              <label className="flex flex-col items-center justify-center w-full h-24 rounded-lg cursor-pointer border-2 border-dashed overflow-hidden relative" style={{borderColor: 'var(--line)', backgroundColor: 'var(--charcoal-mid)'}}>
+                {editImagePreview ? (
+                  <img src={editImagePreview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <Icon name="Upload" size={20} style={{color: 'var(--text-muted)'}} />
+                    <span className="text-xs" style={{color: 'var(--text-muted)'}}>Нажмите для замены</span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleEditImageUpload} />
+              </label>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" disabled={editLoading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+                {editLoading ? 'Сохраняем...' : 'Сохранить'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setEditTeaser(null)} style={{color: 'var(--text-muted)'}}>
+                Отмена
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

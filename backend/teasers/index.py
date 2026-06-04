@@ -194,6 +194,39 @@ def handler(event: dict, context) -> dict:
         db.close()
         return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'id': ad_id, 'status': 'pending'})}
 
+    # Редактировать тизер (владелец)
+    if action == 'update_teaser':
+        teaser_id = body.get('id')
+        if not teaser_id:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Не указан id тизера'})}
+
+        cur.execute(f"SELECT user_id FROM {SCHEMA}.teasers WHERE id = %s", (teaser_id,))
+        row = cur.fetchone()
+        if not row or row[0] != user_id:
+            db.close()
+            return {'statusCode': 403, 'headers': cors, 'body': json.dumps({'error': 'Нет доступа'})}
+
+        title = body.get('title', '').strip()
+        url = body.get('url', '').strip()
+        description = body.get('description', '').strip()
+        image_url = body.get('image_url', '').strip()
+
+        if not title or not url:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Заполните заголовок и ссылку'})}
+
+        banned_kw = check_content(f"{title} {description} {url}")
+        if banned_kw:
+            db.close()
+            return {'statusCode': 400, 'headers': cors, 'body': json.dumps({'error': 'Реклама отклонена: запрещённый контент по законодательству РФ'})}
+
+        cur.execute(f"UPDATE {SCHEMA}.teasers SET title=%s, description=%s, url=%s, image_url=%s WHERE id=%s",
+                    (title, description, url, image_url, teaser_id))
+        db.commit()
+        db.close()
+        return {'statusCode': 200, 'headers': cors, 'body': json.dumps({'ok': True})}
+
     # Обновить статус (admin)
     if action == 'update' and user_role == 'admin':
         teaser_id = body.get('id')
