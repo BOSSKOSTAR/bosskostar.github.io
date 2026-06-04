@@ -69,7 +69,7 @@ export default function AdvertiserDashboard({ user }: Props) {
 
   const copyRefLink = () => {
     if (!refData) return;
-    const link = `${window.location.origin}/register?ref=${refData.ref_code}`;
+    const link = `https://tizerpro.online/register?ref=${refData.ref_code}`;
     navigator.clipboard.writeText(link);
     setRefCopied(true);
     setTimeout(() => setRefCopied(false), 2000);
@@ -271,7 +271,7 @@ export default function AdvertiserDashboard({ user }: Props) {
             <>
               <div className="flex gap-3 items-center mb-4">
                 <div className="flex-1 px-3 py-2 rounded text-sm font-mono" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--line)', color: 'var(--text-primary)'}}>
-                  {`${window.location.origin}/register?ref=${refData.ref_code}`}
+                  {`https://tizerpro.online/register?ref=${refData.ref_code}`}
                 </div>
                 <Button onClick={copyRefLink} style={{backgroundColor: 'var(--gold)', color: '#111318', minWidth: 90}}>
                   <Icon name={refCopied ? 'Check' : 'Copy'} size={16} className="mr-2" />
