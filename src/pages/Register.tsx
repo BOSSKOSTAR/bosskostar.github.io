@@ -1,9 +1,12 @@
+import { createClient } from '@supabase/supabase-js';
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
+const supabaseUrl = 'https://supabase.co';
+const supabaseKey = 'sb_publishable_8lh0pIQKFqHJul0SGvER0w__SY9r6Gm';
+const supabase = createClient(supabaseUrl, supabaseKey);
 export default function Register() {
   const [searchParams] = useSearchParams();
   const [name, setName] = useState('');
@@ -21,10 +24,24 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await register({ name, email, password, role, ref_code: refCode });
+      // 1. Регистрируем пользователя в аутентификации Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            display_name: name,
+            role: role
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      alert('УРА! Вы успешно зарегистрированы в базе Supabase!');
       navigate('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка регистрации');
+      setError(err instanceof Error ? err.message : 'Ошибка регистрации в Supabase');
     } finally {
       setLoading(false);
     }
