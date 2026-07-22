@@ -24,6 +24,7 @@ const hmrKeepalive = {
 
 // https://vitejs.dev/config/
 export default defineConfig(({mode}) => ({
+    base: '/',
     plugins: [
         react(),
         hmrKeepalive,
