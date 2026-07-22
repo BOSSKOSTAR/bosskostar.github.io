@@ -1,85 +1,77 @@
-import { createClient } from '@supabase/supabase-js';
 import { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+
+// Инициализация Supabase
 const supabaseUrl = 'https://supabase.co';
 const supabaseKey = 'sb_publishable_8lh0pIQKFqHJul0SGvER0w__SY9r6Gm';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 export default function Register() {
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role] = useState(searchParams.get('role') || 'advertiser');
-  const refCode = searchParams.get('ref') || '';
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setLoading('true');
     try {
-      // 1. Регистрируем пользователя в аутентификации Supabase
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error: sbError } = await supabase.auth.signUp({
         email: email,
         password: password,
         options: {
           data: {
             display_name: name,
-            role: role
           }
         }
       });
 
-      if (error) throw error;
+      if (sbError) throw sbError;
 
-      alert('УРА! Вы успешно зарегистрированы в базе Supabase!');
-      navigate('/dashboard');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка регистрации в Supabase');
+      if (data.user) {
+        alert('УРА! Вы успешно зарегистрированы в базе Supabase!');
+        navigate('/login');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Ошибка регистрации в Supabase');
     } finally {
-      setLoading(false);
+      setLoading('');
     }
   };
 
   return (
-    <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md p-8 rounded-lg" style={{backgroundColor: 'var(--charcoal-mid)', border: '1px solid var(--line)'}}>
-        <h1 className="text-2xl font-bold font-display mb-6 text-center" style={{color: 'var(--gold)'}}>TizerPro</h1>
-        <h2 className="text-xl font-bold mb-4 text-center" style={{color: 'var(--text-primary)'}}>Регистрация</h2>
-        {refCode && (
-          <div className="mb-4 px-3 py-2 rounded text-sm text-center" style={{backgroundColor: 'var(--charcoal)', border: '1px solid var(--gold)', color: 'var(--gold)'}}>
-            Вас пригласили — бонусы другу начислятся автоматически
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      <div className="bg-[#141414] p-8 rounded-xl border border-neutral-800 max-w-md w-full text-white">
+        <h2 className="text-2xl font-bold text-center mb-6 text-amber-500">Регистрация в TizerPro</h2>
+        
+        {error && <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded mb-4 text-sm">{error}</div>}
+        
+        <form>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Имя</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded p-2 text-white focus:outline-none focus:border-amber-500" placeholder="Ваше имя" />
           </div>
-        )}
-
-        <form className="...">
-          <div>
-            <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Имя</label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded p-2 text-white focus:outline-none focus:border-amber-500" placeholder="name@example.com" />
           </div>
-          <div>
-            <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Email</label>
-            <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="your@email.com" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-1">Пароль</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-neutral-900 border border-neutral-800 rounded p-2 text-white focus:outline-none focus:border-amber-500" placeholder="Минимум 6 символов" />
           </div>
-          <div>
-            <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Пароль</label>
-            <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Минимум 6 символов" required minLength={6} style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
-          </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="...">
-            {loading ? 'Регистрируем...' : 'Зарегистрироваться'}
-          </Button>
+          
+          <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading === 'true'} className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold p-3 rounded transition duration-200 disabled:opacity-50">
+            {loading ? 'Загрузка...' : 'Зарегистрироваться'}
+          </button>
         </form>
-        <p className="text-center mt-4 text-sm" style={{color: 'var(--text-muted)'}}>
-          Есть аккаунт? <Link to="/login" style={{color: 'var(--gold)'}}>Войти</Link>
-        </p>
       </div>
     </div>
   );
 }
+ 
