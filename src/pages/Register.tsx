@@ -58,7 +58,7 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="...">
           <div>
             <label className="block text-sm mb-1" style={{color: 'var(--text-muted)'}}>Имя</label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" required style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
@@ -72,7 +72,7 @@ export default function Register() {
             <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Минимум 6 символов" required minLength={6} style={{backgroundColor: 'var(--charcoal)', borderColor: 'var(--line)', color: 'var(--text-primary)'}} />
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading} style={{backgroundColor: 'var(--gold)', color: '#111318'}}>
+          <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="...">
             {loading ? 'Регистрируем...' : 'Зарегистрироваться'}
           </Button>
         </form>
